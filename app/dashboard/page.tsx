@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import {
@@ -15,50 +16,46 @@ import {
   ArrowUpRight,
   TrendingUp,
 } from 'lucide-react';
+import {
+  stats as demoStats,
+  orders as demoOrders,
+  projects as demoProjects,
+  alerts as demoAlerts,
+  Order,
+} from '@/app/lib/demo-data';
+
+// Map icon strings to Lucide components
+const IconMap = {
+  ShoppingCart,
+  FolderOpen,
+  DollarSign,
+  Users,
+  AlertCircle,
+  Clock,
+  TrendingUp,
+};
 
 export default function DashboardPage() {
-  const stats = [
-    { label: 'الطلبات النشطة', value: '8', icon: ShoppingCart, change: '+2 هذا الأسبوع', color: 'emerald' },
-    { label: 'المشاريع الجارية', value: '5', icon: FolderOpen, change: '1 في انتظار المراجعة', color: 'purple' },
-    { label: 'إجمالي الإيرادات', value: '45,000 ر.س', icon: DollarSign, change: '+12% منذ الشهر الماضي', color: 'blue' },
-    { label: 'العملاء النشطون', value: '12', icon: Users, change: '+3 عملاء جدد', color: 'amber' },
-  ];
-
   const quickActions = [
     { label: 'طلب جديد', href: '/dashboard/orders/new', icon: Plus, color: 'text-white bg-[#5B4DFF] hover:bg-[#4b3dff] shadow-sm shadow-[#5B4DFF]/10' },
-    { label: 'مشروع جديد', href: '/dashboard/projects', icon: FolderOpen, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
+    { label: 'مشروع جديد', href: '/dashboard/projects/new', icon: FolderOpen, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
     { label: 'عرض التقارير', href: '/dashboard/reports', icon: BarChart3, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
     { label: 'الإعدادات', href: '/dashboard/settings', icon: Settings, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
   ];
 
-  const recentOrders = [
-    { id: 'ORD-109', client: 'متجر العطور الفاخرة', service: 'إدارة حملات سناب شات', price: '4,000 ر.س', status: 'قيد التنفيذ', date: 'منذ ساعتين' },
-    { id: 'ORD-108', client: 'شركة سلة المحدودة', service: 'تصميم هوية بصرية كاملة', price: '12,500 ر.س', status: 'مكتمل', date: 'أمس، 04:30 م' },
-    { id: 'ORD-107', client: 'متجر التمور الراقية', service: 'تحسين أداء متجر سلة (SEO)', price: '5,500 ر.س', status: 'بانتظار العميل', date: '3 يونيو 2026' },
-    { id: 'ORD-106', client: 'عبق الشرق للعود', service: 'كتابة محتوى إعلاني', price: '3,000 ر.س', status: 'مكتمل', date: '1 يونيو 2026' },
-  ];
+  const recentOrders = demoOrders.slice(0, 4);
+  const activeProjects = demoProjects.slice(0, 4);
 
-  const activeProjects = [
-    { name: 'تهيئة وتحسين محركات البحث متجر العطور', client: 'متجر العطور الفاخرة', progress: 75, status: 'نشط', statusColor: 'text-emerald-600 bg-emerald-50' },
-    { name: 'هوية بصرية وتصميم بنرات المتجر الجديد', client: 'شركة سلة المحدودة', progress: 100, status: 'مكتمل', statusColor: 'text-blue-600 bg-blue-50' },
-    { name: 'حملة تسويق موسم الصيف الكبرى', client: 'عبق الشرق للعود', progress: 40, status: 'نشط', statusColor: 'text-emerald-600 bg-emerald-50' },
-    { name: 'تطوير تطبيق الجوال وتجربة المستخدم', client: 'متجر التمور الراقية', progress: 15, status: 'نشط', statusColor: 'text-emerald-600 bg-emerald-50' },
-  ];
-
-  const alerts = [
-    { title: 'رفع متطلبات معلق', desc: 'متجر التمور الراقية لم يرفع ملفات الشعار المطلوب بعد لمشروع الـ SEO.', type: 'warning', icon: AlertCircle },
-    { title: 'تقرير مبيعات شهر مايو', desc: 'تم إعداد التقرير المالي لشهر مايو وهو جاهز للمراجعة من قبل الإدارة.', type: 'info', icon: TrendingUp },
-    { title: 'تسليم الهوية البصرية غداً', desc: 'موعد تسليم المخرجات النهائية لشركة سلة المحدودة يصادف يوم الغد.', type: 'danger', icon: Clock },
-  ];
-
-  const getStatusStyle = (status: string) => {
+  const getStatusStyle = (status: Order['status']) => {
     switch (status) {
       case 'مكتمل':
-        return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+        return 'bg-emerald-50 text-emerald-700 border border-emerald-250';
       case 'قيد التنفيذ':
         return 'bg-[#5B4DFF]/10 text-[#5B4DFF] border border-[#5B4DFF]/20';
       case 'بانتظار العميل':
-        return 'bg-amber-50 text-amber-700 border border-amber-200';
+        return 'bg-amber-50 text-amber-700 border border-amber-250';
+      case 'جديد':
+        return 'bg-blue-50 text-blue-700 border border-blue-250';
       default:
         return 'bg-slate-50 text-slate-600 border border-slate-200';
     }
@@ -82,8 +79,8 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        {stats.map((stat, idx) => {
-          const Icon = stat.icon;
+        {demoStats.map((stat, idx) => {
+          const Icon = IconMap[stat.iconName as keyof typeof IconMap] || FolderOpen;
           return (
             <Card key={idx} className="border border-slate-200/80 hover:shadow-md transition-shadow">
               <CardBody className="p-5">
@@ -120,8 +117,8 @@ export default function DashboardPage() {
                 <ArrowUpRight size={14} />
               </Link>
             </CardHeader>
-            <div className="overflow-x-auto">
-              <table className="w-full text-right border-collapse text-xs">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-right border-collapse text-xs min-w-[500px]">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 border-b border-slate-200/80">
                     <th className="px-6 py-3 font-semibold font-sans">رقم الطلب</th>
@@ -135,9 +132,13 @@ export default function DashboardPage() {
                 <tbody className="divide-y divide-slate-100">
                   {recentOrders.map((order) => (
                     <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-3.5 font-bold text-[#111827] font-sans">{order.id}</td>
-                      <td className="px-6 py-3.5 font-semibold text-slate-700 font-sans">{order.client}</td>
-                      <td className="px-6 py-3.5 text-slate-600 font-sans">{order.service}</td>
+                      <td className="px-6 py-3.5 font-bold text-[#111827] font-sans">
+                        <Link href={`/dashboard/orders/${order.id}`} className="hover:text-[#5B4DFF] hover:underline">
+                          {order.id}
+                        </Link>
+                      </td>
+                      <td className="px-6 py-3.5 font-semibold text-slate-700 font-sans">{order.storeName}</td>
+                      <td className="px-6 py-3.5 text-slate-600 font-sans">{order.serviceLabel}</td>
                       <td className="px-6 py-3.5 text-left font-bold text-[#111827] font-sans">{order.price}</td>
                       <td className="px-6 py-3.5 text-center">
                         <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold font-sans ${getStatusStyle(order.status)}`}>
@@ -164,13 +165,13 @@ export default function DashboardPage() {
             <CardBody className="p-4 md:p-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {activeProjects.map((project, idx) => (
-                  <div key={idx} className="border border-slate-150 rounded-xl p-3.5 space-y-3 hover:border-slate-350 transition-colors bg-white">
+                  <div key={idx} className="border border-slate-150 rounded-xl p-3.5 space-y-3 hover:border-slate-300 transition-all bg-white shadow-sm">
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-1">
                         <h4 className="font-bold text-xs text-[#111827] font-sans line-clamp-1">{project.name}</h4>
                         <p className="text-[10px] text-[#64748B] font-medium font-sans">{project.client}</p>
                       </div>
-                      <span className={`px-2 py-0.5 rounded-full text-[8px] font-bold font-sans shrink-0 ${project.statusColor}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-[8px] font-bold font-sans shrink-0 border ${project.statusColor}`}>
                         {project.status}
                       </span>
                     </div>
@@ -226,8 +227,8 @@ export default function DashboardPage() {
               <h3 className="font-bold text-sm text-[#111827] font-sans">تنبيهات مهمة</h3>
             </CardHeader>
             <CardBody className="p-4 space-y-3">
-              {alerts.map((alert, idx) => {
-                const Icon = alert.icon;
+              {demoAlerts.map((alert, idx) => {
+                const Icon = IconMap[alert.iconName as keyof typeof IconMap] || AlertCircle;
                 let borderTheme = 'border-amber-200 bg-amber-50/50 text-amber-800';
                 let iconColor = 'text-amber-600';
                 if (alert.type === 'danger') {
