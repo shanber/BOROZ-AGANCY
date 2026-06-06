@@ -25,7 +25,7 @@ export default function DashboardPage() {
   ];
 
   const quickActions = [
-    { label: 'طلب جديد', href: '/dashboard/orders', icon: Plus, color: 'text-white bg-[#5B4DFF] hover:bg-[#4b3dff] shadow-sm shadow-[#5B4DFF]/10' },
+    { label: 'طلب جديد', href: '/dashboard/orders/new', icon: Plus, color: 'text-white bg-[#5B4DFF] hover:bg-[#4b3dff] shadow-sm shadow-[#5B4DFF]/10' },
     { label: 'مشروع جديد', href: '/dashboard/projects', icon: FolderOpen, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
     { label: 'عرض التقارير', href: '/dashboard/reports', icon: BarChart3, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
     { label: 'الإعدادات', href: '/dashboard/settings', icon: Settings, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
@@ -42,6 +42,7 @@ export default function DashboardPage() {
     { name: 'تهيئة وتحسين محركات البحث متجر العطور', client: 'متجر العطور الفاخرة', progress: 75, status: 'نشط', statusColor: 'text-emerald-600 bg-emerald-50' },
     { name: 'هوية بصرية وتصميم بنرات المتجر الجديد', client: 'شركة سلة المحدودة', progress: 100, status: 'مكتمل', statusColor: 'text-blue-600 bg-blue-50' },
     { name: 'حملة تسويق موسم الصيف الكبرى', client: 'عبق الشرق للعود', progress: 40, status: 'نشط', statusColor: 'text-emerald-600 bg-emerald-50' },
+    { name: 'تطوير تطبيق الجوال وتجربة المستخدم', client: 'متجر التمور الراقية', progress: 15, status: 'نشط', statusColor: 'text-emerald-600 bg-emerald-50' },
   ];
 
   const alerts = [

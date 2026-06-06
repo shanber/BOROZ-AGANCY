@@ -30,7 +30,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
         <Topbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
         {/* Content */}
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        <main className="flex-1 pt-3 pb-6 px-4 md:pt-5 md:pb-8 md:px-8 overflow-y-auto">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
