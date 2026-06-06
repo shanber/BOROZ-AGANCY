@@ -67,6 +67,31 @@ export default function NewOrderPage() {
     
     // Simulate API request
     setTimeout(() => {
+      // Save order to localStorage
+      const localOrdersJson = typeof window !== 'undefined' ? localStorage.getItem('boroz_custom_orders') : null;
+      const localOrders = localOrdersJson ? JSON.parse(localOrdersJson) : [];
+      const nextIdNum = 110 + localOrders.length;
+      const newId = `ORD-${nextIdNum}`;
+      
+      const newOrder = {
+        id: newId,
+        storeName: storeName.trim(),
+        managerName: managerName.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        sallaUrl: sallaUrl.trim() || `https://salla.sa/${storeName.trim()}`,
+        serviceKey: serviceType,
+        serviceLabel: services.find((s) => s.key === serviceType)?.label || 'خدمة أخرى',
+        status: 'جديد' as const,
+        priority,
+        date: 'اليوم',
+        price: budget ? `${Number(budget).toLocaleString()} ر.س` : 'قيد التقدير',
+        description: description.trim(),
+        notes: notes.trim(),
+      };
+      
+      localStorage.setItem('boroz_custom_orders', JSON.stringify([newOrder, ...localOrders]));
+
       setLoading(false);
       setSuccessMessage('تم إنشاء الطلب بنجاح، وسيتم مراجعته من فريق بروز.');
       setSuccess(true);
@@ -85,6 +110,31 @@ export default function NewOrderPage() {
     }
     setLoading(true);
     setTimeout(() => {
+      // Save draft order to localStorage
+      const localOrdersJson = typeof window !== 'undefined' ? localStorage.getItem('boroz_custom_orders') : null;
+      const localOrders = localOrdersJson ? JSON.parse(localOrdersJson) : [];
+      const nextIdNum = 110 + localOrders.length;
+      const newId = `ORD-${nextIdNum}`;
+      
+      const newOrder = {
+        id: newId,
+        storeName: storeName.trim(),
+        managerName: managerName.trim() || 'غير محدد',
+        phone: phone.trim() || 'غير محدد',
+        email: email.trim(),
+        sallaUrl: sallaUrl.trim() || `https://salla.sa/${storeName.trim()}`,
+        serviceKey: serviceType || 'other',
+        serviceLabel: services.find((s) => s.key === serviceType)?.label || 'خدمة أخرى',
+        status: 'جديد' as const,
+        priority,
+        date: 'اليوم',
+        price: budget ? `${Number(budget).toLocaleString()} ر.س` : 'قيد التقدير',
+        description: description.trim() || 'مسودة طلب جديدة',
+        notes: notes.trim(),
+      };
+      
+      localStorage.setItem('boroz_custom_orders', JSON.stringify([newOrder, ...localOrders]));
+
       setLoading(false);
       setSuccessMessage('تم حفظ الطلب كمسودة بنجاح.');
       setSuccess(true);

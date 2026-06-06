@@ -22,13 +22,43 @@ import {
 
 export default function OrderDetailsPage({ params }: { params: { id: string } }) {
   const orderId = params.id;
-  const foundOrder = orders.find((o) => o.id === orderId);
-
+  
   // Status and details state
-  const [order, setOrder] = useState<Order | undefined>(foundOrder);
+  const [order, setOrder] = useState<Order | undefined>(undefined);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showMsgAlert, setShowMsgAlert] = useState(false);
+
+  React.useEffect(() => {
+    // 1. Try finding in demo-data first
+    const demoOrder = orders.find((o) => o.id === orderId);
+    if (demoOrder) {
+      setOrder(demoOrder);
+    } else {
+      // 2. Try finding in localStorage
+      const localJson = localStorage.getItem('boroz_custom_orders');
+      if (localJson) {
+        const localOrders = JSON.parse(localJson);
+        const localOrder = localOrders.find((o: Order) => o.id === orderId);
+        if (localOrder) {
+          setOrder(localOrder);
+        }
+      }
+    }
+    setIsLoaded(true);
+  }, [orderId]);
+
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-[300px] animate-fade-in">
+        <div className="text-[#5B4DFF] font-bold font-sans animate-pulse flex items-center gap-2">
+          <span className="inline-block animate-spin">⟳</span>
+          جاري تحميل تفاصيل الطلب...
+        </div>
+      </div>
+    );
+  }
 
   if (!order) {
     return (

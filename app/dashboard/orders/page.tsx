@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -11,17 +11,36 @@ import { orders, Order } from '@/app/lib/demo-data';
 export default function OrdersPage() {
   const [activeFilter, setActiveFilter] = useState<string>('الكل');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [allOrders, setAllOrders] = useState<Order[]>(orders);
+  const [hasLocalOrders, setHasLocalOrders] = useState(false);
+
+  useEffect(() => {
+    const localJson = localStorage.getItem('boroz_custom_orders');
+    if (localJson) {
+      const local = JSON.parse(localJson);
+      if (local.length > 0) {
+        setAllOrders([...local, ...orders]);
+        setHasLocalOrders(true);
+      }
+    }
+  }, []);
+
+  const handleClearDemoOrders = () => {
+    localStorage.removeItem('boroz_custom_orders');
+    setAllOrders(orders);
+    setHasLocalOrders(false);
+  };
 
   const filterTabs = [
-    { label: 'الكل', count: orders.length },
-    { label: 'جديد', count: orders.filter(o => o.status === 'جديد').length },
-    { label: 'قيد التنفيذ', count: orders.filter(o => o.status === 'قيد التنفيذ').length },
-    { label: 'بانتظار العميل', count: orders.filter(o => o.status === 'بانتظار العميل').length },
-    { label: 'مكتمل', count: orders.filter(o => o.status === 'مكتمل').length },
+    { label: 'الكل', count: allOrders.length },
+    { label: 'جديد', count: allOrders.filter(o => o.status === 'جديد').length },
+    { label: 'قيد التنفيذ', count: allOrders.filter(o => o.status === 'قيد التنفيذ').length },
+    { label: 'بانتظار العميل', count: allOrders.filter(o => o.status === 'بانتظار العميل').length },
+    { label: 'مكتمل', count: allOrders.filter(o => o.status === 'مكتمل').length },
   ];
 
   // Filter and Search logic
-  const filteredOrders = orders.filter((order) => {
+  const filteredOrders = allOrders.filter((order) => {
     const matchesFilter = activeFilter === 'الكل' || order.status === activeFilter;
     const matchesSearch = 
       order.storeName.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -68,12 +87,23 @@ export default function OrdersPage() {
             متابعة طلبات الخدمات وحالات التنفيذ داخل وكالة بروز.
           </p>
         </div>
-        <Link href="/dashboard/orders/new">
-          <Button className="bg-[#5B4DFF] hover:bg-[#4b3dff] text-white text-xs font-bold shadow-sm shadow-[#5B4DFF]/10 flex items-center gap-1.5 px-4 py-2.5 rounded-xl">
-            <Plus size={16} />
-            طلب جديد
-          </Button>
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          {hasLocalOrders && (
+            <Button
+              onClick={handleClearDemoOrders}
+              variant="danger"
+              className="text-xs font-bold px-3 py-2.5 rounded-xl border border-transparent"
+            >
+              مسح الطلبات التجريبية
+            </Button>
+          )}
+          <Link href="/dashboard/orders/new">
+            <Button className="bg-[#5B4DFF] hover:bg-[#4b3dff] text-white text-xs font-bold shadow-sm shadow-[#5B4DFF]/10 flex items-center gap-1.5 px-4 py-2.5 rounded-xl">
+              <Plus size={16} />
+              طلب جديد
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters and Search Bar */}
