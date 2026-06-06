@@ -99,10 +99,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Logout / User Info footer */}
       <div className="p-4 border-t border-slate-800 bg-[#0c1222] shrink-0">
-        <button className="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-medium text-slate-450 hover:text-white hover:bg-slate-800 rounded-xl transition-colors">
-          <LogOut size={18} />
-          <span className="font-sans">تسجيل الخروج</span>
-        </button>
+        <Link href="/auth/login" className="w-full block">
+          <button
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                localStorage.removeItem('isAuthenticated');
+                localStorage.removeItem('userEmail');
+              }
+              onClose();
+            }}
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-medium text-slate-450 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+          >
+            <LogOut size={18} />
+            <span className="font-sans">تسجيل الخروج</span>
+          </button>
+        </Link>
       </div>
     </aside>
   );

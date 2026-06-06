@@ -23,12 +23,15 @@ export default function Home() {
             <span className="text-primary-navy">بروز</span>{' '}
             <span className="text-primary-purple">BOROZ</span>
           </div>
-          <div className="flex gap-4">
+          <div className="flex items-center gap-3">
+            <Link href="/request">
+              <Button variant="ghost" className="text-[#5B4DFF] hover:bg-[#5B4DFF]/5 text-xs font-bold font-sans">اطلب خدمة الآن</Button>
+            </Link>
             <Link href="/auth/login">
-              <Button variant="ghost">تسجيل الدخول</Button>
+              <Button variant="ghost" className="text-xs font-bold font-sans">تسجيل الدخول</Button>
             </Link>
             <Link href="/auth/register">
-              <Button variant="primary">ابدأ الآن</Button>
+              <Button variant="primary" className="text-xs font-bold font-sans">ابدأ الآن</Button>
             </Link>
           </div>
         </div>
@@ -44,14 +47,19 @@ export default function Home() {
           اطلب خدمات التسويق والتصميم والتطوير لمتجرك على سلة، وتابع التنفيذ والمشاريع
           والتقارير من لوحة تحكم موحدة
         </p>
-        <div className="flex gap-4 justify-center">
+        <div className="flex flex-wrap gap-4 justify-center">
+          <Link href="/request">
+            <Button variant="primary" size="lg" className="bg-[#5B4DFF] hover:bg-[#4b3dff] shadow-sm shadow-[#5B4DFF]/10 text-sm font-bold font-sans">
+              اطلب خدمة الآن
+            </Button>
+          </Link>
           <Link href="/auth/register">
-            <Button variant="primary" size="lg">
+            <Button variant="secondary" size="lg" className="border border-slate-200 text-sm font-bold font-sans">
               ابدأ الآن
             </Button>
           </Link>
           <Link href="/auth/login">
-            <Button variant="secondary" size="lg">
+            <Button variant="ghost" size="lg" className="text-slate-600 hover:bg-slate-100 text-sm font-bold font-sans">
               تسجيل الدخول
             </Button>
           </Link>
