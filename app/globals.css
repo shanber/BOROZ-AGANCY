@@ -1,0 +1,228 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  @apply box-border;
+}
+
+html {
+  direction: rtl;
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 font-sans;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================================
+   BASE COMPONENTS
+   ============================================================================ */
+
+/* Buttons */
+@layer components {
+  .btn-base {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2;
+  }
+
+  .btn-primary {
+    @apply btn-base bg-primary-navy text-white hover:bg-blue-900 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply btn-base bg-slate-100 text-slate-900 hover:bg-slate-200 active:scale-95 disabled:opacity-50;
+  }
+
+  .btn-danger {
+    @apply btn-base bg-red-600 text-white hover:bg-red-700 active:scale-95 disabled:opacity-50;
+  }
+
+  /* Forms */
+  .input-base {
+    @apply w-full px-3 py-2 border border-slate-300 rounded-lg font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary-purple focus:border-transparent transition-all;
+  }
+
+  .label-base {
+    @apply block text-sm font-medium text-slate-700 mb-1;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-lg border border-slate-200 shadow-sm;
+  }
+
+  .card-header {
+    @apply px-6 py-4 border-b border-slate-200;
+  }
+
+  .card-body {
+    @apply px-6 py-4;
+  }
+
+  .card-footer {
+    @apply px-6 py-4 border-t border-slate-200 bg-slate-50;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply badge bg-emerald-100 text-emerald-800;
+  }
+
+  .badge-warning {
+    @apply badge bg-amber-100 text-amber-800;
+  }
+
+  .badge-danger {
+    @apply badge bg-red-100 text-red-800;
+  }
+
+  .badge-info {
+    @apply badge bg-blue-100 text-blue-800;
+  }
+
+  .badge-default {
+    @apply badge bg-slate-100 text-slate-800;
+  }
+
+  /* Tables */
+  .table-base {
+    @apply w-full text-sm;
+  }
+
+  .table-head {
+    @apply bg-slate-100 border-b border-slate-200;
+  }
+
+  .table-row {
+    @apply border-b border-slate-200 hover:bg-slate-50 transition-colors;
+  }
+
+  .table-cell {
+    @apply px-4 py-3;
+  }
+
+  /* Alerts */
+  .alert {
+    @apply rounded-lg p-4 flex gap-3;
+  }
+
+  .alert-success {
+    @apply alert bg-emerald-50 border border-emerald-200 text-emerald-800;
+  }
+
+  .alert-error {
+    @apply alert bg-red-50 border border-red-200 text-red-800;
+  }
+
+  .alert-warning {
+    @apply alert bg-amber-50 border border-amber-200 text-amber-800;
+  }
+
+  .alert-info {
+    @apply alert bg-blue-50 border border-blue-200 text-blue-800;
+  }
+}
+
+/* ============================================================================
+   LAYOUT
+   ============================================================================ */
+
+.sidebar {
+  @apply fixed right-0 top-0 h-screen w-64 bg-white border-l border-slate-200 shadow-lg z-40;
+}
+
+.sidebar.mobile-open {
+  @apply translate-x-0;
+}
+
+.sidebar.mobile-closed {
+  @apply translate-x-full;
+}
+
+.topbar {
+  @apply sticky top-0 z-30 bg-white border-b border-slate-200 shadow-sm;
+}
+
+.dashboard-layout {
+  @apply flex h-screen;
+}
+
+.dashboard-content {
+  @apply flex-1 overflow-auto;
+}
+
+.main-wrapper {
+  @apply p-6;
+}
+
+/* ============================================================================
+   UTILITIES
+   ============================================================================ */
+
+.text-truncate {
+  @apply truncate;
+}
+
+.text-ellipsis {
+  @apply line-clamp-3;
+}
+
+.fade-in {
+  @apply animate-fade-in;
+}
+
+.slide-in {
+  @apply animate-slide-in;
+}
+
+/* ============================================================================
+   SCROLLBAR STYLING
+   ============================================================================ */
+
+::-webkit-scrollbar {
+  @apply w-2 h-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-lg;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400;
+}
+
+/* ============================================================================
+   ACCESSIBILITY
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    @apply !animate-none !transition-none;
+  }
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+
+  .card {
+    @apply rounded-md;
+  }
+
+  .btn-base {
+    @apply px-3 py-2 text-sm;
+  }
+}

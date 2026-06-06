@@ -1,0 +1,471 @@
+// Salla Marketing MVP - Prisma Schema
+// Multi-tenant, Role-based, Global Services, Soft Deletes, Notifications
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// AUTHENTICATION & MULTI-TENANT
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String    // bcrypt hashed
+  phone         String?
+  avatar        String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  orgMembers    OrganizationMember[]
+  notifications Notification[]
+  assignedTasks Task[]
+  activityLogs  ActivityLog[]
+
+  @@map("users")
+}
+
+model Organization {
+  id            String    @id @default(cuid())
+  name          String
+  slug          String    @unique
+  logo          String?
+  website       String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  members       OrganizationMember[]
+  plan          OrganizationPlan?
+  notifications Notification[]
+  merchants     Merchant[]
+  leads         Lead[]
+  services      Service[]
+  orders        ServiceOrder[]
+  projects      Project[]
+  tasks         Task[]
+  landingPages  LandingPage[]
+  fileAssets    FileAsset[]
+  activityLogs  ActivityLog[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orgId         String
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  role          Role      @default(PROJECT_MANAGER)
+  isActive      Boolean   @default(true)
+  joinedAt      DateTime  @default(now())
+
+  @@unique([userId, orgId])
+  @@index([orgId])
+  @@index([userId])
+  @@map("organization_members")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  PROJECT_MANAGER
+  DESIGNER
+  MARKETER
+  CLIENT
+}
+
+// ============================================================================
+// SAAS SUBSCRIPTION
+// ============================================================================
+
+model OrganizationPlan {
+  id            String    @id @default(cuid())
+  orgId         String    @unique
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  plan          SubscriptionPlan @default(FREE)
+  monthlyLimit  Int              @default(10)
+  currentMonth  Int              @default(0)
+  renewalDate   DateTime?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([orgId])
+  @@map("organization_plans")
+}
+
+enum SubscriptionPlan {
+  FREE        // 10 leads/month
+  STARTER     // 100 leads/month
+  PRO         // 1000 leads/month
+  ENTERPRISE  // unlimited
+}
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+model Notification {
+  id            String    @id @default(cuid())
+  orgId         String
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title         String
+  message       String
+  isRead        Boolean   @default(false)
+  
+  createdAt     DateTime  @default(now())
+  readAt        DateTime?
+
+  @@index([orgId])
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ============================================================================
+// CRM (MERCHANTS & LEADS)
+// ============================================================================
+
+model Merchant {
+  id            String    @id @default(cuid())
+  orgId         String
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  storeName     String
+  storeUrl      String
+  email         String
+  phone         String
+  contactName   String?
+  status        MerchantStatus @default(NEW)
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? // soft delete
+
+  // Relations
+  leads         Lead[]
+  orders        ServiceOrder[]
+  projects      Project[]
+  sallaStore    SallaStore?
+
+  @@unique([orgId, email])
+  @@index([orgId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("merchants")
+}
+
+enum MerchantStatus {
+  NEW
+  CONTACTED
+  QUOTE_SENT
+  NEGOTIATING
+  CLIENT
+  REJECTED
+}
+
+model Lead {
+  id            String    @id @default(cuid())
+  orgId         String
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name          String
+  phone         String
+  email         String
+  storeUrl      String?
+  source        String?
+  stage         LeadStage @default(NEW)
+  notes         String?
+  merchantId    String?
+  merchant      Merchant? @relation(fields: [merchantId], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? // soft delete
+
+  @@unique([orgId, email])
+  @@index([orgId])
+  @@index([stage])
+  @@index([merchantId])
+  @@index([deletedAt])
+  @@map("leads")
+}
+
+enum LeadStage {
+  NEW
+  CONTACTED
+  QUOTE_SENT
+  NEGOTIATING
+  CLIENT
+  REJECTED
+}
+
+// ============================================================================
+// SERVICES & ORDERS
+// ============================================================================
+
+model Service {
+  id            String    @id @default(cuid())
+  // NO orgId - GLOBAL services
+  name          String    @unique
+  description   String
+  basePrice     Float
+  estimatedDays Int
+  isActive      Boolean   @default(true)
+  icon          String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  orders        ServiceOrder[]
+  projects      Project[]
+
+  @@index([isActive])
+  @@map("services")
+}
+
+model ServiceOrder {
+  id            String    @id @default(cuid())
+  orgId         String
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  merchantId    String
+  merchant      Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  serviceId     String
+  service       Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  description   String
+  status        OrderStatus @default(NEW)
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? // soft delete
+
+  // Relations
+  fileAssets    FileAsset[]
+  project       Project?
+  activityLog   ActivityLog[]
+
+  @@index([orgId])
+  @@index([merchantId])
+  @@index([serviceId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("service_orders")
+}
+
+enum OrderStatus {
+  NEW
+  WAITING_REQUIREMENTS
+  IN_PROGRESS
+  AWAITING_REVIEW
+  COMPLETED
+  CANCELLED
+}
+
+// ============================================================================
+// PROJECTS & TASKS
+// ============================================================================
+
+model Project {
+  id            String    @id @default(cuid())
+  orgId         String
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name          String
+  merchantId    String
+  merchant      Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  serviceId     String
+  service       Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  orderId       String    @unique
+  order         ServiceOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status        ProjectStatus @default(PENDING)
+  startDate     DateTime?
+  dueDate       DateTime?
+  completedDate DateTime?
+  description   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? // soft delete
+
+  // Relations
+  tasks         Task[]
+  fileAssets    FileAsset[]
+
+  @@unique([orgId, orderId])
+  @@index([orgId])
+  @@index([merchantId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("projects")
+}
+
+enum ProjectStatus {
+  PENDING
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+model Task {
+  id            String    @id @default(cuid())
+  orgId         String
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?
+  assignedToId  String?
+  assignedTo    User?     @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  status        TaskStatus @default(NOT_STARTED)
+  dueDate       DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? // soft delete
+
+  // Relations
+  fileAssets    FileAsset[]
+
+  @@index([orgId])
+  @@index([projectId])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("tasks")
+}
+
+enum TaskStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  AWAITING_CLIENT
+  COMPLETED
+}
+
+// ============================================================================
+// FILE MANAGEMENT
+// ============================================================================
+
+model FileAsset {
+  id            String    @id @default(cuid())
+  orgId         String
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  fileName      String
+  fileUrl       String
+  fileSize      Int?
+  fileType      String?
+  uploadedBy    String?
+  
+  orderId       String?
+  order         ServiceOrder? @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  projectId     String?
+  project       Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  taskId        String?
+  task          Task?     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime  @default(now())
+
+  @@index([orgId])
+  @@index([orderId])
+  @@index([projectId])
+  @@index([taskId])
+  @@map("file_assets")
+}
+
+// ============================================================================
+// LANDING PAGES
+// ============================================================================
+
+model LandingPage {
+  id            String    @id @default(cuid())
+  orgId         String
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  title         String
+  slug          String
+  description   String?
+  ctaText       String    @default("تواصل معنا")
+  isPublished   Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  submissions   LandingPageSubmission[]
+
+  @@unique([orgId, slug])
+  @@index([orgId])
+  @@index([isPublished])
+  @@map("landing_pages")
+}
+
+model LandingPageSubmission {
+  id              String    @id @default(cuid())
+  landingPageId   String
+  landingPage     LandingPage @relation(fields: [landingPageId], references: [id], onDelete: Cascade)
+  
+  name            String
+  email           String
+  phone           String
+  message         String?
+  storeUrl        String?
+  createdAt       DateTime  @default(now())
+
+  @@index([landingPageId])
+  @@index([email])
+  @@map("landing_page_submissions")
+}
+
+// ============================================================================
+// INTEGRATIONS
+// ============================================================================
+
+model SallaStore {
+  id            String    @id @default(cuid())
+  merchantId    String    @unique
+  merchant      Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  storeUrl      String
+  accessToken   String?
+  refreshToken  String?
+  connectedAt   DateTime?
+  lastSyncedAt  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([merchantId])
+  @@map("salla_stores")
+}
+
+// ============================================================================
+// AUDIT
+// ============================================================================
+
+model ActivityLog {
+  id            String    @id @default(cuid())
+  orgId         String
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  userId        String?
+  
+  action        String    // "create", "update", "delete", "status_change"
+  entity        String    // "Merchant", "Lead", "Order", etc
+  entityId      String
+  changes       String?   // JSON
+  
+  createdAt     DateTime  @default(now())
+
+  @@index([orgId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
