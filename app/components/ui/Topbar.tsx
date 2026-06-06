@@ -3,16 +3,15 @@
 import { Bell, Menu, Search, Settings } from 'lucide-react';
 
 interface TopbarProps {
-  title: string;
   userName?: string;
   onToggleSidebar: () => void;
 }
 
-export function Topbar({ title, userName = 'مسؤول بروز', onToggleSidebar }: TopbarProps) {
+export function Topbar({ userName = 'مسؤول بروز', onToggleSidebar }: TopbarProps) {
   return (
     <header className="sticky top-0 z-30 bg-white/95 border-b border-slate-200/80 shadow-sm backdrop-blur-md">
       <div className="flex items-center justify-between px-4 md:px-8 py-4">
-        {/* Right side: Title & Sidebar toggle (aligned right in RTL) */}
+        {/* Right side: Sidebar toggle on mobile (aligned right in RTL) */}
         <div className="flex items-center gap-3">
           <button
             onClick={onToggleSidebar}
@@ -21,10 +20,6 @@ export function Topbar({ title, userName = 'مسؤول بروز', onToggleSideba
           >
             <Menu size={22} />
           </button>
-          
-          <h1 className="text-base md:text-lg font-bold text-[#111827] font-sans truncate">
-            {title}
-          </h1>
         </div>
 
         {/* Left side: Search & User actions (aligned left in RTL) */}

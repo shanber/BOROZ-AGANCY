@@ -44,12 +44,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <aside
-      className={`fixed right-0 top-0 h-screen w-[260px] bg-[#0F172A] text-slate-300 border-l border-slate-800 shadow-xl z-50 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${
+      className={`fixed right-0 top-0 h-screen w-[260px] bg-[#0F172A] text-slate-300 border-l border-slate-800 z-50 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
       {/* Header / Logo */}
-      <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+      <div className="p-6 border-b border-slate-800 flex items-center justify-between shrink-0">
         <Link 
           href="/dashboard" 
           onClick={onClose}
@@ -67,7 +67,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 flex flex-col gap-1.5 p-4 overflow-y-auto">
+      <nav className="flex-1 flex flex-col gap-1.5 p-4 overflow-y-auto min-h-0">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
@@ -98,7 +98,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       </nav>
 
       {/* Logout / User Info footer */}
-      <div className="p-4 border-t border-slate-800 bg-[#0c1222]">
+      <div className="p-4 border-t border-slate-800 bg-[#0c1222] shrink-0">
         <button className="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-medium text-slate-450 hover:text-white hover:bg-slate-800 rounded-xl transition-colors">
           <LogOut size={18} />
           <span className="font-sans">تسجيل الخروج</span>

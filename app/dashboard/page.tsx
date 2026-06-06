@@ -25,10 +25,10 @@ export default function DashboardPage() {
   ];
 
   const quickActions = [
-    { label: 'طلب جديد', href: '/dashboard/orders', icon: Plus, color: 'text-[#5B4DFF] bg-[#5B4DFF]/10 hover:bg-[#5B4DFF]/15' },
-    { label: 'مشروع جديد', href: '/dashboard/projects', icon: FolderOpen, color: 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100' },
-    { label: 'عرض التقارير', href: '/dashboard/reports', icon: BarChart3, color: 'text-blue-600 bg-blue-50 hover:bg-blue-100' },
-    { label: 'الإعدادات', href: '/dashboard/settings', icon: Settings, color: 'text-slate-600 bg-slate-100 hover:bg-slate-200' },
+    { label: 'طلب جديد', href: '/dashboard/orders', icon: Plus, color: 'text-white bg-[#5B4DFF] hover:bg-[#4b3dff] shadow-sm shadow-[#5B4DFF]/10' },
+    { label: 'مشروع جديد', href: '/dashboard/projects', icon: FolderOpen, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
+    { label: 'عرض التقارير', href: '/dashboard/reports', icon: BarChart3, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
+    { label: 'الإعدادات', href: '/dashboard/settings', icon: Settings, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
   ];
 
   const recentOrders = [
@@ -153,17 +153,17 @@ export default function DashboardPage() {
 
           {/* Active Projects Grid */}
           <Card className="border border-slate-200/80 shadow-sm">
-            <CardHeader className="flex justify-between items-center bg-white border-b border-slate-200/80 px-6 py-4">
+            <CardHeader className="flex justify-between items-center bg-white border-b border-slate-200/80 px-5 py-4">
               <h3 className="font-bold text-sm text-[#111827] font-sans">المشاريع النشطة</h3>
               <Link href="/dashboard/projects" className="text-xs text-[#5B4DFF] font-semibold hover:underline flex items-center gap-1 font-sans">
                 عرض كل المشاريع
                 <ArrowUpRight size={14} />
               </Link>
             </CardHeader>
-            <CardBody className="p-6">
+            <CardBody className="p-4 md:p-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {activeProjects.map((project, idx) => (
-                  <div key={idx} className="border border-slate-150 rounded-xl p-4 space-y-3 hover:border-slate-350 transition-colors bg-white">
+                  <div key={idx} className="border border-slate-150 rounded-xl p-3.5 space-y-3 hover:border-slate-350 transition-colors bg-white">
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-1">
                         <h4 className="font-bold text-xs text-[#111827] font-sans line-clamp-1">{project.name}</h4>
@@ -224,7 +224,7 @@ export default function DashboardPage() {
             <CardHeader className="bg-white border-b border-slate-200/80 px-6 py-4">
               <h3 className="font-bold text-sm text-[#111827] font-sans">تنبيهات مهمة</h3>
             </CardHeader>
-            <CardBody className="p-5 space-y-4">
+            <CardBody className="p-4 space-y-3">
               {alerts.map((alert, idx) => {
                 const Icon = alert.icon;
                 let borderTheme = 'border-amber-200 bg-amber-50/50 text-amber-800';
@@ -237,7 +237,7 @@ export default function DashboardPage() {
                   iconColor = 'text-blue-600';
                 }
                 return (
-                  <div key={idx} className={`p-4 border rounded-xl flex gap-3 ${borderTheme}`}>
+                  <div key={idx} className={`p-3 border rounded-xl flex gap-3 ${borderTheme}`}>
                     <div className={`${iconColor} shrink-0`}>
                       <Icon size={18} />
                     </div>

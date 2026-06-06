@@ -3,27 +3,13 @@
 import React, { useState } from 'react';
 import { Sidebar } from '../ui/Sidebar';
 import { Topbar } from '../ui/Topbar';
-import { usePathname } from 'next/navigation';
 
 interface DashboardLayoutShellProps {
   children: React.ReactNode;
 }
 
-const routeTitles: Record<string, string> = {
-  '/dashboard': 'لوحة التحكم',
-  '/dashboard/merchants': 'التجار',
-  '/dashboard/leads': 'العملاء المحتملين',
-  '/dashboard/orders': 'الطلبات',
-  '/dashboard/projects': 'المشاريع',
-  '/dashboard/tasks': 'المهام',
-  '/dashboard/reports': 'التقارير',
-  '/dashboard/settings': 'الإعدادات',
-};
-
 export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const pathname = usePathname();
-  const title = routeTitles[pathname] || 'لوحة التحكم';
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] text-[#111827] overflow-x-hidden relative">
@@ -41,7 +27,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
       {/* Main content wrapper */}
       <div className="flex-1 flex flex-col min-w-0 md:pr-[260px] transition-all duration-300 min-h-screen">
         {/* Topbar */}
-        <Topbar title={title} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+        <Topbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
         {/* Content */}
         <main className="flex-1 p-4 md:p-8 overflow-y-auto">
