@@ -93,7 +93,7 @@ export default function NewProjectPage() {
       ) : (
         <Card className="border border-slate-200/80 shadow-sm overflow-hidden">
           <CardHeader className="bg-slate-50/50 border-b border-slate-200/60 px-6 py-4 flex items-center gap-2">
-            <FolderOpen size={18} className="text-[#5B4DFF]" />
+            <FolderOpen size={18} className="text-[#06B6D4]" />
             <h3 className="font-bold text-sm text-[#111827] font-sans">تفاصيل المشروع الجديد</h3>
           </CardHeader>
           <CardBody className="p-6 md:p-8">
@@ -172,7 +172,7 @@ export default function NewProjectPage() {
                 <Button
                   type="submit"
                   isLoading={loading}
-                  className="bg-[#5B4DFF] hover:bg-[#4b3dff] text-white px-6 text-xs font-bold shadow-sm shadow-[#5B4DFF]/10"
+                  className="bg-[#06B6D4] hover:bg-[#0891B2] text-white px-6 text-xs font-bold shadow-sm shadow-[#06B6D4]/10"
                 >
                   إرسال المشروع
                 </Button>

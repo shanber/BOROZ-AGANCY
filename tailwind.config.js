@@ -9,8 +9,10 @@ const config = {
         primary: {
           50: '#f8fafc',
           100: '#f1f5f9',
-          navy: '#0F172A',
-          purple: '#5B4DFF',
+          navy: '#0B132B',
+          purple: '#06B6D4',
+          cyan: '#06B6D4',
+          green: '#22C55E',
           light: '#F8FAFC',
           dark: '#111827',
           muted: '#475569',
@@ -21,9 +23,19 @@ const config = {
           danger: '#EF4444',
           info: '#3B82F6',
         },
+        main: 'var(--bg-main)',
+        card: 'var(--bg-card)',
+      },
+      textColor: {
+        main: 'var(--text-main)',
+        muted: 'var(--text-muted)',
+        dim: 'var(--text-dim)',
+      },
+      borderColor: {
+        glass: 'var(--border-glass)',
       },
       fontFamily: {
-        sans: ['Cairo', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-ibm-plex-arabic)', 'IBM Plex Sans Arabic', 'system-ui', 'sans-serif'],
         mono: ['Fira Code', 'monospace'],
       },
       spacing: {

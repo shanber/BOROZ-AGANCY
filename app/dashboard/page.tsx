@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import {
   ShoppingCart,
@@ -9,92 +10,156 @@ import {
   DollarSign,
   FolderOpen,
   Plus,
-  BarChart3,
-  Settings,
   AlertCircle,
-  Clock,
   ArrowUpRight,
   TrendingUp,
+  MessageSquare,
+  CheckSquare,
 } from 'lucide-react';
-import {
-  stats as demoStats,
-  orders as demoOrders,
-  projects as demoProjects,
-  alerts as demoAlerts,
-  Order,
-} from '@/app/lib/demo-data';
+import { Order } from '@/app/lib/demo-data';
+import { getDashboardOrdersSummary } from '@/app/lib/orders-api';
 
-// Map icon strings to Lucide components
+// ── Icon map ──────────────────────────────────────────────────
 const IconMap = {
   ShoppingCart,
   FolderOpen,
   DollarSign,
   Users,
   AlertCircle,
-  Clock,
   TrendingUp,
+  CheckSquare,
 };
 
-export default function DashboardPage() {
-  const quickActions = [
-    { label: 'طلب جديد', href: '/dashboard/orders/new', icon: Plus, color: 'text-white bg-[#5B4DFF] hover:bg-[#4b3dff] shadow-sm shadow-[#5B4DFF]/10' },
-    { label: 'مشروع جديد', href: '/dashboard/projects/new', icon: FolderOpen, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
-    { label: 'عرض التقارير', href: '/dashboard/reports', icon: BarChart3, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
-    { label: 'الإعدادات', href: '/dashboard/settings', icon: Settings, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
-  ];
+// ── Role-based welcome header ─────────────────────────────────
+function DashboardHeader({ name, role }: { name?: string | null; role?: string }) {
+  if (role === 'ADMIN') {
+    return (
+      <div>
+        <p className="text-xs font-semibold text-[#06B6D4] mb-1 tracking-wide uppercase">
+          لوحة تحكم الإدارة
+        </p>
+        <h2 className="text-xl md:text-2xl font-bold text-[#111827]">أهلاً مسؤول بروز</h2>
+        <p className="text-xs md:text-sm text-[#475569] mt-1.5">
+          إدارة مقدمي الخدمة، الطلبات، المشاريع، ومراجعة نشاط المنصة.
+        </p>
+      </div>
+    );
+  }
 
-  const recentOrders = demoOrders.slice(0, 4);
-  const activeProjects = demoProjects.slice(0, 4);
+  if (role === 'PROVIDER') {
+    const greeting = name ? `أهلاً ${name}` : 'أهلاً مقدم الخدمة';
+    return (
+      <div>
+        <p className="text-xs font-semibold text-[#06B6D4] mb-1 tracking-wide uppercase">
+          لوحة تحكم مقدم الخدمة
+        </p>
+        <h2 className="text-xl md:text-2xl font-bold text-[#111827]">{greeting}</h2>
+        <p className="text-xs md:text-sm text-[#475569] mt-1.5">
+          تابع الطلبات المناسبة، عروضك، ومشاريعك داخل بروز.
+        </p>
+      </div>
+    );
+  }
+
+  // Default: MERCHANT
+  const greeting = name ? `أهلاً تاجرنا، ${name}` : 'أهلاً تاجرنا';
+  return (
+    <div>
+      <p className="text-xs font-semibold text-[#06B6D4] mb-1 tracking-wide uppercase">
+        لوحة تحكم التاجر
+      </p>
+      <h2 className="text-xl md:text-2xl font-bold text-[#111827]">{greeting}</h2>
+      <p className="text-xs md:text-sm text-[#475569] mt-1.5">
+        تابع طلباتك، عروضك، ومشاريع متجرك من مكان واحد.
+      </p>
+    </div>
+  );
+}
+
+// ── Main dashboard page ───────────────────────────────────────
+export default function DashboardPage() {
+  const { data: session } = useSession();
+  const globalRole = session?.user?.globalRole;
+  const userName = session?.user?.name;
+
+  const [stats, setStats] = React.useState([
+    { label: 'طلبات جديدة',      value: '0', iconName: 'FolderOpen'   },
+    { label: 'قيد المراجعة',   value: '0', iconName: 'AlertCircle'  },
+    { label: 'العروض المستلمة',       value: '0', iconName: 'Users'        },
+    { label: 'المشاريع النشطة',       value: '0', iconName: 'TrendingUp'   },
+    { label: 'المشاريع المكتملة',     value: '0', iconName: 'CheckSquare'  },
+  ]);
+  const [recentOrders, setRecentOrders] = React.useState<Order[]>([]);
+
+  React.useEffect(() => {
+    async function loadDashboardData() {
+      try {
+        const summary = await getDashboardOrdersSummary();
+        const newCount = summary.counts.SUBMITTED || 0;
+        const reviewCount = summary.counts.UNDER_REVIEW || 0;
+
+        setStats([
+          { label: 'طلبات جديدة',    value: String(newCount),      iconName: 'FolderOpen'  },
+          { label: 'قيد المراجعة',  value: String(reviewCount),    iconName: 'AlertCircle' },
+          { label: 'العروض المستلمة',      value: '0',                    iconName: 'Users'       },
+          { label: 'المشاريع النشطة',      value: '0',                    iconName: 'TrendingUp'  },
+          { label: 'المشاريع المكتملة',    value: '0',                    iconName: 'CheckSquare' },
+        ]);
+
+        setRecentOrders(summary.recentOrders);
+      } catch (error) {
+        console.warn('Failed to load real data', error);
+      }
+    }
+    loadDashboardData();
+  }, []);
+
+  const quickActions = [
+    { label: 'طلب خدمة جديد', href: '/request',            icon: Plus,          color: 'text-white bg-[#06B6D4] hover:bg-[#0891B2] shadow-sm' },
+    { label: 'إدارة طلباتي',    href: '/dashboard/orders',   icon: ShoppingCart,  color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
+    { label: 'الرسائل',        href: '/dashboard/messages', icon: MessageSquare, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
+    { label: 'الفواتير',       href: '/dashboard/invoices', icon: DollarSign,    color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
+  ];
 
   const getStatusStyle = (status: Order['status']) => {
     switch (status) {
-      case 'مكتمل':
-        return 'bg-emerald-50 text-emerald-700 border border-emerald-250';
-      case 'قيد التنفيذ':
-        return 'bg-[#5B4DFF]/10 text-[#5B4DFF] border border-[#5B4DFF]/20';
-      case 'بانتظار العميل':
-        return 'bg-amber-50 text-amber-700 border border-amber-250';
-      case 'جديد':
-        return 'bg-blue-50 text-blue-700 border border-blue-250';
-      default:
-        return 'bg-slate-50 text-slate-600 border border-slate-200';
+      case 'مكتمل':         return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+      case 'معتمد للعروض':   return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+      case 'قيد المراجعة':   return 'bg-[#06B6D4]/10 text-[#06B6D4] border border-[#06B6D4]/20';
+      case 'بحاجة إلى تعديل': return 'bg-amber-50 text-amber-700 border border-amber-200';
+      case 'بانتظار مراجعة بروز':          return 'bg-blue-50 text-blue-700 border border-blue-200';
+      case 'مرفوض':          return 'bg-red-50 text-red-700 border border-red-200';
+      default:              return 'bg-slate-50 text-slate-600 border border-slate-200';
     }
   };
 
   return (
-    <div className="space-y-6 md:space-y-8 animate-fade-in">
-      {/* Header section inside main content */}
+    <div className="space-y-6 animate-fade-in">
+
+      {/* ── Welcome Header (role-aware) ────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/60 pb-5">
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold text-[#111827] font-sans">لوحة التحكم</h2>
-          <p className="text-xs md:text-sm text-[#64748B] mt-1 font-sans">
-            نظرة عامة على أداء الطلبات والمشاريع داخل بروز
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-xs font-semibold text-[#64748B] bg-white border border-slate-200/80 rounded-xl px-3.5 py-2 shadow-sm">
+        <DashboardHeader name={userName} role={globalRole} />
+        <div className="flex items-center gap-2 text-xs font-semibold text-[#64748B] bg-white border border-slate-200/80 rounded-xl px-3.5 py-2 shadow-sm shrink-0">
           <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
-          <span className="font-sans">محدث تلقائياً قبل دقيقة واحدة</span>
+          <span>محدث تلقائياً</span>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        {demoStats.map((stat, idx) => {
+      {/* ── Stats Grid ────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {stats.map((stat, idx) => {
           const Icon = IconMap[stat.iconName as keyof typeof IconMap] || FolderOpen;
           return (
             <Card key={idx} className="border border-slate-200/80 hover:shadow-md transition-shadow">
               <CardBody className="p-5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[#64748B] font-sans">{stat.label}</span>
-                  <div className="w-10 h-10 rounded-xl bg-[#0F172A]/5 flex items-center justify-center text-[#0F172A]">
-                    <Icon size={20} />
+                  <span className="text-xs font-semibold text-[#64748B]">{stat.label}</span>
+                  <div className="w-9 h-9 rounded-xl bg-[#0F172A]/5 flex items-center justify-center text-[#0F172A]">
+                    <Icon size={18} />
                   </div>
                 </div>
                 <div className="mt-4">
-                  <h3 className="text-2xl font-bold text-[#111827] font-sans leading-none">{stat.value}</h3>
-                  <span className="text-[10px] text-slate-500 font-medium font-sans mt-2 block">
-                    {stat.change}
-                  </span>
+                  <h3 className="text-2xl font-bold text-[#111827] leading-none">{stat.value}</h3>
                 </div>
               </CardBody>
             </Card>
@@ -102,105 +167,83 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* Main Grid Content */}
+      {/* ── Main Grid ─────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-        
-        {/* Left Side: Recent Orders & Active Projects (2 Columns on Desktop) */}
-        <div className="lg:col-span-2 space-y-6 md:space-y-8">
-          
-          {/* Recent Orders Table */}
+
+        {/* Recent Orders */}
+        <div className="lg:col-span-2">
           <Card className="border border-slate-200/80 shadow-sm overflow-hidden">
             <CardHeader className="flex justify-between items-center bg-white border-b border-slate-200/80 px-6 py-4">
-              <h3 className="font-bold text-sm text-[#111827] font-sans">آخر الطلبات</h3>
-              <Link href="/dashboard/orders" className="text-xs text-[#5B4DFF] font-semibold hover:underline flex items-center gap-1 font-sans">
-                عرض الكل
-                <ArrowUpRight size={14} />
+              <h3 className="font-bold text-sm text-[#111827]">آخر الطلبات</h3>
+              <Link href="/dashboard/orders" className="text-xs text-[#06B6D4] font-semibold hover:underline flex items-center gap-1">
+                عرض الكل <ArrowUpRight size={14} />
               </Link>
             </CardHeader>
             <div className="overflow-x-auto w-full">
               <table className="w-full text-right border-collapse text-xs min-w-[500px]">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 border-b border-slate-200/80">
-                    <th className="px-6 py-3 font-semibold font-sans">رقم الطلب</th>
-                    <th className="px-6 py-3 font-semibold font-sans">العميل</th>
-                    <th className="px-6 py-3 font-semibold font-sans">الخدمة</th>
-                    <th className="px-6 py-3 font-semibold font-sans text-left">القيمة</th>
-                    <th className="px-6 py-3 font-semibold font-sans text-center">الحالة</th>
-                    <th className="px-6 py-3 font-semibold font-sans">التاريخ</th>
+                    <th className="px-6 py-3 font-semibold">رقم الطلب</th>
+                    <th className="px-6 py-3 font-semibold">المتجر</th>
+                    <th className="px-6 py-3 font-semibold">الخدمة</th>
+                    <th className="px-6 py-3 font-semibold text-left">القيمة</th>
+                    <th className="px-6 py-3 font-semibold text-center">الحالة</th>
+                    <th className="px-6 py-3 font-semibold">التاريخ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {recentOrders.map((order) => (
-                    <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-3.5 font-bold text-[#111827] font-sans">
-                        <Link href={`/dashboard/orders/${order.id}`} className="hover:text-[#5B4DFF] hover:underline">
-                          {order.id}
-                        </Link>
+                  {recentOrders.length > 0 ? (
+                    recentOrders.map((order) => (
+                      <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-3.5 font-bold text-[#111827]">
+                          <Link href={`/dashboard/orders/${order.id}`} className="hover:text-[#06B6D4] hover:underline">
+                            {order.id}
+                          </Link>
+                        </td>
+                        <td className="px-6 py-3.5 font-semibold text-slate-700">{order.storeName}</td>
+                        <td className="px-6 py-3.5 text-slate-600">{order.serviceLabel}</td>
+                        <td className="px-6 py-3.5 text-left font-bold text-[#111827]">{order.price}</td>
+                        <td className="px-6 py-3.5 text-center">
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${getStatusStyle(order.status)}`}>
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3.5 text-slate-500 whitespace-nowrap">{order.date}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-4">
+                          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
+                            <ShoppingCart size={32} />
+                          </div>
+                          <div className="space-y-1">
+                            <h4 className="font-bold text-slate-700">لا توجد طلبات حتى الآن</h4>
+                            <p className="text-sm text-slate-500 max-w-sm mx-auto">
+                              ابدأ بإرسال طلب خدمة ليقوم فريق بروز بمراجعته وتوجيهه للمستقل المناسب.
+                            </p>
+                          </div>
+                          <Link href="/request" className="btn-primary mt-2">
+                            <Plus size={18} />
+                            إنشاء طلب خدمة
+                          </Link>
+                        </div>
                       </td>
-                      <td className="px-6 py-3.5 font-semibold text-slate-700 font-sans">{order.storeName}</td>
-                      <td className="px-6 py-3.5 text-slate-600 font-sans">{order.serviceLabel}</td>
-                      <td className="px-6 py-3.5 text-left font-bold text-[#111827] font-sans">{order.price}</td>
-                      <td className="px-6 py-3.5 text-center">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold font-sans ${getStatusStyle(order.status)}`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3.5 text-slate-500 font-sans whitespace-nowrap">{order.date}</td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
           </Card>
-
-          {/* Active Projects Grid */}
-          <Card className="border border-slate-200/80 shadow-sm">
-            <CardHeader className="flex justify-between items-center bg-white border-b border-slate-200/80 px-5 py-4">
-              <h3 className="font-bold text-sm text-[#111827] font-sans">المشاريع النشطة</h3>
-              <Link href="/dashboard/projects" className="text-xs text-[#5B4DFF] font-semibold hover:underline flex items-center gap-1 font-sans">
-                عرض كل المشاريع
-                <ArrowUpRight size={14} />
-              </Link>
-            </CardHeader>
-            <CardBody className="p-4 md:p-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {activeProjects.map((project, idx) => (
-                  <div key={idx} className="border border-slate-150 rounded-xl p-3.5 space-y-3 hover:border-slate-300 transition-all bg-white shadow-sm">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1">
-                        <h4 className="font-bold text-xs text-[#111827] font-sans line-clamp-1">{project.name}</h4>
-                        <p className="text-[10px] text-[#64748B] font-medium font-sans">{project.client}</p>
-                      </div>
-                      <span className={`px-2 py-0.5 rounded-full text-[8px] font-bold font-sans shrink-0 border ${project.statusColor}`}>
-                        {project.status}
-                      </span>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[10px] font-bold font-sans">
-                        <span className="text-slate-500">نسبة الإنجاز</span>
-                        <span className="text-[#5B4DFF]">{project.progress}%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                        <div 
-                          className="bg-[#5B4DFF] h-1.5 rounded-full transition-all duration-500" 
-                          style={{ width: `${project.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
         </div>
 
-        {/* Right Side: Quick Actions & Alerts (1 Column on Desktop) */}
-        <div className="space-y-6 md:space-y-8">
-          
-          {/* Quick Actions Grid */}
+        {/* Side: Quick Actions + Alert */}
+        <div className="space-y-6">
+
           <Card className="border border-slate-200/80 shadow-sm">
             <CardHeader className="bg-white border-b border-slate-200/80 px-6 py-4">
-              <h3 className="font-bold text-sm text-[#111827] font-sans">الإجراءات السريعة</h3>
+              <h3 className="font-bold text-sm text-[#111827]">الإجراءات السريعة</h3>
             </CardHeader>
             <CardBody className="p-6">
               <div className="grid grid-cols-2 gap-3">
@@ -213,7 +256,7 @@ export default function DashboardPage() {
                       className={`flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200/60 shadow-sm transition-all text-center hover:-translate-y-0.5 ${action.color}`}
                     >
                       <Icon className="mb-2" size={20} />
-                      <span className="text-xs font-bold font-sans">{action.label}</span>
+                      <span className="text-xs font-bold">{action.label}</span>
                     </Link>
                   );
                 })}
@@ -221,37 +264,25 @@ export default function DashboardPage() {
             </CardBody>
           </Card>
 
-          {/* Important Alerts */}
           <Card className="border border-slate-200/80 shadow-sm">
             <CardHeader className="bg-white border-b border-slate-200/80 px-6 py-4">
-              <h3 className="font-bold text-sm text-[#111827] font-sans">تنبيهات مهمة</h3>
+              <h3 className="font-bold text-sm text-[#111827]">تنبيهات مهمة</h3>
             </CardHeader>
-            <CardBody className="p-4 space-y-3">
-              {demoAlerts.map((alert, idx) => {
-                const Icon = IconMap[alert.iconName as keyof typeof IconMap] || AlertCircle;
-                let borderTheme = 'border-amber-200 bg-amber-50/50 text-amber-800';
-                let iconColor = 'text-amber-600';
-                if (alert.type === 'danger') {
-                  borderTheme = 'border-red-200 bg-red-50/50 text-red-800';
-                  iconColor = 'text-red-600';
-                } else if (alert.type === 'info') {
-                  borderTheme = 'border-blue-200 bg-blue-50/50 text-blue-800';
-                  iconColor = 'text-blue-600';
-                }
-                return (
-                  <div key={idx} className={`p-3 border rounded-xl flex gap-3 ${borderTheme}`}>
-                    <div className={`${iconColor} shrink-0`}>
-                      <Icon size={18} />
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="font-bold text-xs font-sans leading-none">{alert.title}</h4>
-                      <p className="text-[10px] text-slate-650 leading-relaxed font-sans">{alert.desc}</p>
-                    </div>
-                  </div>
-                );
-              })}
+            <CardBody className="p-4">
+              <div className="p-3 border rounded-xl flex gap-3 border-blue-200 bg-blue-50/50">
+                <div className="text-blue-500 shrink-0 mt-0.5">
+                  <AlertCircle size={18} />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-bold text-xs text-blue-900 leading-none">مرحباً بك في بروز</h4>
+                  <p className="text-[10px] text-blue-700 leading-relaxed">
+                    يمكنك الآن البدء بإضافة طلب خدمة جديد ليقوم فريقنا بمراجعته وتوجيهه.
+                  </p>
+                </div>
+              </div>
             </CardBody>
           </Card>
+
         </div>
       </div>
     </div>

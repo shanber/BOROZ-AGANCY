@@ -1,207 +1,201 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { Eye, Plus, Search } from 'lucide-react';
+import prisma from '@/app/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Plus, Search, Eye } from 'lucide-react';
-import { orders, Order } from '@/app/lib/demo-data';
+import { services } from '@/app/lib/demo-data';
+import { formatCurrency, formatShortDate } from '@/app/lib/formatters';
+import { getOrderStatusLabel, getOrderStatusStyle, orderReviewStatuses } from '@/app/lib/order-status';
+import { merchantOrderOwnershipFilter } from '@/app/lib/order-access';
+import { getCached } from '@/app/lib/server-cache';
 
-export default function OrdersPage() {
-  const [activeFilter, setActiveFilter] = useState<string>('الكل');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [allOrders, setAllOrders] = useState<Order[]>(orders);
-  const [hasLocalOrders, setHasLocalOrders] = useState(false);
+const pageSize = 20;
 
-  useEffect(() => {
-    const localJson = localStorage.getItem('boroz_custom_orders');
-    if (localJson) {
-      const local = JSON.parse(localJson);
-      if (local.length > 0) {
-        setAllOrders([...local, ...orders]);
-        setHasLocalOrders(true);
-      }
-    }
-  }, []);
+function serviceLabel(serviceType: string) {
+  return services.find((service) => service.key === serviceType)?.label || serviceType || 'خدمة أخرى';
+}
 
-  const handleClearDemoOrders = () => {
-    localStorage.removeItem('boroz_custom_orders');
-    setAllOrders(orders);
-    setHasLocalOrders(false);
-  };
-
-  const filterTabs = [
-    { label: 'الكل', count: allOrders.length },
-    { label: 'جديد', count: allOrders.filter(o => o.status === 'جديد').length },
-    { label: 'قيد التنفيذ', count: allOrders.filter(o => o.status === 'قيد التنفيذ').length },
-    { label: 'بانتظار العميل', count: allOrders.filter(o => o.status === 'بانتظار العميل').length },
-    { label: 'مكتمل', count: allOrders.filter(o => o.status === 'مكتمل').length },
-  ];
-
-  // Filter and Search logic
-  const filteredOrders = allOrders.filter((order) => {
-    const matchesFilter = activeFilter === 'الكل' || order.status === activeFilter;
-    const matchesSearch = 
-      order.storeName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.serviceLabel.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+function buildSearchParams(params: Record<string, string | number | undefined>) {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') searchParams.set(key, String(value));
   });
+  return searchParams.toString();
+}
 
-  const getStatusStyle = (status: Order['status']) => {
-    switch (status) {
-      case 'مكتمل':
-        return 'bg-emerald-50 text-emerald-700 border border-emerald-250';
-      case 'قيد التنفيذ':
-        return 'bg-[#5B4DFF]/10 text-[#5B4DFF] border border-[#5B4DFF]/20';
-      case 'بانتظار العميل':
-        return 'bg-amber-50 text-amber-700 border border-amber-250';
-      case 'جديد':
-        return 'bg-blue-50 text-blue-700 border border-blue-250';
-      default:
-        return 'bg-slate-50 text-slate-650 border border-slate-200';
-    }
-  };
+export default async function OrdersPage({
+  searchParams,
+}: {
+  searchParams?: { search?: string; status?: string; page?: string };
+}) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    redirect('/login');
+  }
 
-  const getPriorityStyle = (priority: Order['priority']) => {
-    switch (priority) {
-      case 'عاجل':
-        return 'bg-red-50 text-red-700 border border-red-200';
-      case 'مهم':
-        return 'bg-amber-50 text-amber-700 border border-amber-200';
-      case 'عادي':
-        return 'bg-slate-50 text-slate-600 border border-slate-200';
-      default:
-        return 'bg-slate-50 text-slate-600 border border-slate-250';
-    }
-  };
+  const ownerFilter = merchantOrderOwnershipFilter(session);
+
+  const search = searchParams?.search?.trim() || '';
+  const status = searchParams?.status?.trim() || '';
+  const page = Math.max(Number(searchParams?.page || '1'), 1);
+
+  const filters: any[] = [ownerFilter];
+  if (status && orderReviewStatuses.includes(status as any)) filters.push({ status });
+  if (search) {
+    filters.push({
+      OR: [
+        { orderNumber: { contains: search, mode: 'insensitive' } },
+        { storeName: { contains: search, mode: 'insensitive' } },
+      ],
+    });
+  }
+
+  const orders = await getCached(
+    `orders-page:${session.user.id}:${search}:${status}:${page}`,
+    10000,
+    () =>
+      prisma.order.findMany({
+        where: { AND: filters },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: {
+          orderNumber: true,
+          storeName: true,
+          serviceType: true,
+          budget: true,
+          priority: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })
+  );
+
+  const statusOptions = [
+    { value: '', label: 'كل الحالات' },
+    ...orderReviewStatuses.map((item) => ({ value: item, label: getOrderStatusLabel(item) })),
+  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 pb-5">
+      <div className="flex flex-col gap-4 border-b border-slate-200/60 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl md:text-2xl font-bold text-[#111827] font-sans">الطلبات</h2>
-          <p className="text-xs md:text-sm text-[#64748B] mt-1 font-sans">
-            متابعة طلبات الخدمات وحالات التنفيذ داخل وكالة بروز.
+          <h2 className="text-xl font-bold text-[#111827] md:text-2xl">الطلبات</h2>
+          <p className="mt-1 text-xs text-[#64748B] md:text-sm">
+            متابعة طلبات الخدمات وحالة مراجعتها داخل بروز.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {hasLocalOrders && (
-            <Button
-              onClick={handleClearDemoOrders}
-              variant="danger"
-              className="text-xs font-bold px-3 py-2.5 rounded-xl border border-transparent"
-            >
-              مسح الطلبات التجريبية
-            </Button>
-          )}
-          <Link href="/dashboard/orders/new">
-            <Button className="bg-[#5B4DFF] hover:bg-[#4b3dff] text-white text-xs font-bold shadow-sm shadow-[#5B4DFF]/10 flex items-center gap-1.5 px-4 py-2.5 rounded-xl">
-              <Plus size={16} />
-              طلب جديد
-            </Button>
-          </Link>
-        </div>
+        <Link href="/dashboard/orders/new">
+          <Button className="flex items-center gap-1.5 rounded-xl bg-[#06B6D4] px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-[#06B6D4]/10 hover:bg-[#0891B2]">
+            <Plus size={16} />
+            طلب جديد
+          </Button>
+        </Link>
       </div>
 
-      {/* Filters and Search Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        {/* Filter Tabs */}
-        <div className="flex flex-wrap gap-1.5 p-1 bg-slate-100 rounded-xl max-w-max">
-          {filterTabs.map((tab) => {
-            const isActive = activeFilter === tab.label;
-            return (
-              <button
-                key={tab.label}
-                onClick={() => setActiveFilter(tab.label)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${isActive ? 'bg-white text-[#111827] shadow-sm' : 'text-slate-600 hover:text-[#111827]'}`}
-              >
-                <span className="font-sans">{tab.label}</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold ${isActive ? 'bg-[#5B4DFF] text-white' : 'bg-slate-200 text-slate-600'}`}>
-                  {tab.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Search Input */}
-        <div className="w-full lg:w-72">
-          <Input
+      <form className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_220px_auto]">
+        <div className="relative">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <input
+            name="search"
+            defaultValue={search}
             placeholder="ابحث برقم الطلب أو اسم المتجر..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            icon={<Search size={16} className="text-slate-400" />}
-            className="bg-white border-slate-200"
+            className="input-base bg-white pr-10"
           />
         </div>
-      </div>
+        <select name="status" defaultValue={status} className="input-base bg-white">
+          {statusOptions.map((option) => (
+            <option key={option.value || 'all'} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <Button type="submit" className="bg-[#06B6D4] px-5 text-sm font-bold text-white hover:bg-[#0891B2]">
+          تطبيق
+        </Button>
+      </form>
 
-      {/* Table Container */}
-      <Card className="border border-slate-200/80 shadow-sm overflow-hidden">
-        {/* Table itself is wrapped in an overflow-x-auto container.
-            This ensures that the table scrolls horizontally ONLY inside the card on mobile,
-            instead of breaking the viewport and causing horizontal scrolling on the page body. */}
+      <Card className="overflow-hidden border border-slate-200/80 shadow-sm">
         <div className="w-full overflow-x-auto">
-          {filteredOrders.length === 0 ? (
-            <div className="text-center py-12 text-slate-500 space-y-2">
-              <p className="text-sm font-sans">لا توجد طلبات تطابق الفلتر أو البحث الحالي.</p>
-              <button 
-                onClick={() => { setActiveFilter('الكل'); setSearchQuery(''); }}
-                className="text-xs text-[#5B4DFF] font-bold hover:underline font-sans"
-              >
+          {orders.length === 0 ? (
+            <div className="space-y-2 py-12 text-center text-slate-500">
+              <p className="text-sm">لا توجد طلبات تطابق الفلتر أو البحث الحالي.</p>
+              <Link href="/dashboard/orders" className="text-xs font-bold text-[#06B6D4] hover:underline">
                 إعادة ضبط الفلاتر
-              </button>
+              </Link>
             </div>
           ) : (
-            <table className="w-full text-right border-collapse text-xs whitespace-nowrap min-w-[750px]">
+            <table className="w-full min-w-[750px] border-collapse whitespace-nowrap text-right text-xs">
               <thead>
-                <tr className="bg-slate-50/80 text-slate-500 border-b border-slate-200/80">
-                  <th className="px-6 py-3.5 font-bold font-sans">رقم الطلب</th>
-                  <th className="px-6 py-3.5 font-bold font-sans">اسم المتجر</th>
-                  <th className="px-6 py-3.5 font-bold font-sans">الخدمة المطلوبة</th>
-                  <th className="px-6 py-3.5 font-bold font-sans text-center">الحالة</th>
-                  <th className="px-6 py-3.5 font-bold font-sans text-center">الأولوية</th>
-                  <th className="px-6 py-3.5 font-bold font-sans">تاريخ الطلب</th>
-                  <th className="px-6 py-3.5 font-bold font-sans text-left">المبلغ</th>
-                  <th className="px-6 py-3.5 font-bold font-sans text-center">الإجراءات</th>
+                <tr className="border-b border-slate-200/80 bg-slate-50/80 text-slate-500">
+                  <th className="px-6 py-3.5 font-bold">رقم الطلب</th>
+                  <th className="px-6 py-3.5 font-bold">اسم المتجر</th>
+                  <th className="px-6 py-3.5 font-bold">الخدمة المطلوبة</th>
+                  <th className="px-6 py-3.5 font-bold text-center">الحالة</th>
+                  <th className="px-6 py-3.5 font-bold text-center">الأولوية</th>
+                  <th className="px-6 py-3.5 font-bold">تاريخ الطلب</th>
+                  <th className="px-6 py-3.5 font-bold text-left">المبلغ</th>
+                  <th className="px-6 py-3.5 font-bold text-center">الإجراءات</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 font-bold text-[#111827] font-sans">{order.id}</td>
-                    <td className="px-6 py-4 font-semibold text-slate-700 font-sans">{order.storeName}</td>
-                    <td className="px-6 py-4 text-slate-650 font-sans">{order.serviceLabel}</td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold font-sans ${getStatusStyle(order.status)}`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold font-sans border ${getPriorityStyle(order.priority)}`}>
-                        {order.priority}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-slate-500 font-sans">{order.date}</td>
-                    <td className="px-6 py-4 text-left font-bold text-[#111827] font-sans">{order.price}</td>
-                    <td className="px-6 py-4 text-center">
-                      <Link href={`/dashboard/orders/${order.id}`}>
-                        <button className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-slate-650 hover:text-[#111827] transition-all font-sans font-bold text-[10px]">
-                          <Eye size={12} />
-                          تفاصيل
-                        </button>
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                {orders.map((order) => {
+                  const statusLabel = getOrderStatusLabel(order.status);
+                  return (
+                    <tr key={order.orderNumber} className="transition-colors hover:bg-slate-50/50">
+                      <td className="px-6 py-4 font-bold text-[#111827]">{order.orderNumber}</td>
+                      <td className="px-6 py-4 font-semibold text-slate-700">{order.storeName}</td>
+                      <td className="px-6 py-4 text-slate-650">{serviceLabel(order.serviceType)}</td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold ${getOrderStatusStyle(order.status)}`}>
+                          {statusLabel}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="inline-block rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[9px] font-bold text-slate-600">
+                          {order.priority}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-slate-500">{formatShortDate(order.createdAt).replace(/-/g, '/')}</td>
+                      <td className="px-6 py-4 text-left font-bold text-[#111827]">
+                        {order.budget ? formatCurrency(order.budget) : 'قيد التقدير'}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <Link href={`/dashboard/orders/${order.orderNumber}`}>
+                          <button className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] font-bold text-slate-650 transition-all hover:bg-slate-100 hover:text-[#111827]">
+                            <Eye size={12} />
+                            تفاصيل
+                          </button>
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
         </div>
       </Card>
+
+      <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+        <Link
+          href={`/dashboard/orders?${buildSearchParams({ search, status, page: Math.max(page - 1, 1) })}`}
+          className={page <= 1 ? 'pointer-events-none opacity-40' : 'hover:text-[#06B6D4]'}
+        >
+          السابق
+        </Link>
+        <span>صفحة {page}</span>
+        <Link
+          href={`/dashboard/orders?${buildSearchParams({ search, status, page: page + 1 })}`}
+          className={orders.length < pageSize ? 'pointer-events-none opacity-40' : 'hover:text-[#06B6D4]'}
+        >
+          التالي
+        </Link>
+      </div>
     </div>
   );
 }

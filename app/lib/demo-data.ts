@@ -7,12 +7,15 @@ export interface Order {
   sallaUrl: string;
   serviceKey: string;
   serviceLabel: string;
-  status: 'جديد' | 'قيد التنفيذ' | 'بانتظار العميل' | 'مكتمل';
+  status: string;
+  statusKey?: string;
   priority: 'عادي' | 'مهم' | 'عاجل';
   date: string;
   price: string;
   description: string;
   notes?: string;
+  adminNote?: string;
+  createdAt?: string | Date;
 }
 
 export interface Project {

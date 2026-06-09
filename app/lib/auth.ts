@@ -1,123 +1,105 @@
-import { prisma } from './prisma';
+import { NextAuthOptions } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
+import prisma from './prisma';
 
-/**
- * Helper function to hash passwords
- */
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 10);
-}
-
-/**
- * Helper function to verify passwords
- */
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
-}
-
-/**
- * Helper function to find user by email
- */
-export async function findUserByEmail(email: string) {
-  return prisma.user.findUnique({
-    where: { email },
-    include: {
-      orgMembers: {
-        include: {
-          organization: true,
-        },
+export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
+  providers: [
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        email: { label: 'البريد الإلكتروني', type: 'email' },
+        password: { label: 'كلمة المرور', type: 'password' },
       },
-    },
-  });
-}
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('الرجاء إدخال البريد الإلكتروني وكلمة المرور');
+        }
 
-/**
- * Helper function to create a new user with organization
- */
-export async function createUserWithOrg(
-  email: string,
-  password: string,
-  name: string,
-  orgName: string
-) {
-  // Hash password
-  const hashedPassword = await hashPassword(password);
-
-  // Create user
-  const user = await prisma.user.create({
-    data: {
-      email,
-      name,
-      password: hashedPassword,
-      isActive: true,
-    },
-  });
-
-  // Create organization
-  const org = await prisma.organization.create({
-    data: {
-      name: orgName,
-      slug: orgName.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now(),
-    },
-  });
-
-  // Add user as SUPER_ADMIN to organization
-  await prisma.organizationMember.create({
-    data: {
-      userId: user.id,
-      orgId: org.id,
-      role: 'SUPER_ADMIN',
-      isActive: true,
-    },
-  });
-
-  // Create default subscription plan
-  await prisma.organizationPlan.create({
-    data: {
-      orgId: org.id,
-      plan: 'FREE',
-      monthlyLimit: 10,
-      currentMonth: 0,
-    },
-  });
-
-  return { user, org };
-}
-
-/**
- * Get user with organizations
- */
-export async function getUserWithOrgs(userId: string) {
-  return prisma.user.findUnique({
-    where: { id: userId },
-    include: {
-      orgMembers: {
-        include: {
-          organization: {
-            include: {
-              plan: true,
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+          include: {
+            expertProfile: true,
+            orgMembers: {
+              where: { isActive: true },
+              take: 1,
+              include: {
+                organization: {
+                  include: {
+                    merchants: {
+                      where: { deletedAt: null },
+                      take: 1,
+                    },
+                  },
+                },
+              },
             },
           },
-        },
+        });
+
+        if (!user) {
+          throw new Error('لم يتم العثور على حساب بهذا البريد الإلكتروني');
+        }
+
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+
+        if (!isPasswordValid) {
+          throw new Error('كلمة المرور غير صحيحة');
+        }
+
+        if (!user.isActive) {
+          throw new Error('تم تعطيل حسابك');
+        }
+
+        const organization = user.orgMembers[0]?.organization;
+        const merchant = organization?.merchants.find((item) => item.email === user.email) || organization?.merchants[0];
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          globalRole: user.globalRole,
+          approvalStatus: user.expertProfile?.approvalStatus, // Only relevant for providers
+          orgId: organization?.id || undefined,
+          merchantId: merchant?.id || undefined,
+          storeName: merchant?.storeName || organization?.name || undefined,
+          storeUrl: merchant?.storeUrl || organization?.website || undefined,
+        };
       },
+    }),
+  ],
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 Days
+  },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.globalRole = user.globalRole;
+        token.approvalStatus = user.approvalStatus;
+        token.orgId = user.orgId;
+        token.merchantId = user.merchantId;
+        token.storeName = user.storeName;
+        token.storeUrl = user.storeUrl;
+      }
+      return token;
     },
-  });
-}
-
-/**
- * Check if user has role in organization
- */
-export function hasRole(
-  userRole: string | undefined,
-  allowedRoles: string[]
-): boolean {
-  if (!userRole) return false;
-  return allowedRoles.includes(userRole);
-}
-
-/**
- * Check if user is admin
- */
-export function isAdmin(userRole: string | undefined): boolean {
-  return hasRole(userRole, ['SUPER_ADMIN', 'ADMIN']);
-}
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id;
+        session.user.globalRole = token.globalRole;
+        session.user.approvalStatus = token.approvalStatus;
+        session.user.orgId = token.orgId;
+        session.user.merchantId = token.merchantId;
+        session.user.storeName = token.storeName;
+        session.user.storeUrl = token.storeUrl;
+      }
+      return session;
+    },
+  },
+  pages: {
+    signIn: '/login',
+  },
+};

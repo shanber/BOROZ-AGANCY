@@ -46,6 +46,20 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md mb-6">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3 rtl:mr-3 rtl:ml-0">
+            <p className="text-sm text-yellow-700 font-bold">
+              ملاحظة: البيانات المعروضة في هذه الصفحة هي بيانات تجريبية (Placeholder) وليست حقيقية. سيتم ربطها بقاعدة البيانات في المرحلة القادمة.
+            </p>
+          </div>
+        </div>
+      </div>
       {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 pb-5">
         <div>
@@ -55,7 +69,7 @@ export default function ProjectsPage() {
           </p>
         </div>
         <Link href="/dashboard/projects/new">
-          <Button className="bg-[#5B4DFF] hover:bg-[#4b3dff] text-white text-xs font-bold shadow-sm shadow-[#5B4DFF]/10 flex items-center gap-1.5 px-4 py-2.5 rounded-xl">
+          <Button className="bg-[#06B6D4] hover:bg-[#0891B2] text-white text-xs font-bold shadow-sm shadow-[#06B6D4]/10 flex items-center gap-1.5 px-4 py-2.5 rounded-xl">
             <Plus size={16} />
             مشروع جديد
           </Button>
@@ -75,7 +89,7 @@ export default function ProjectsPage() {
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${isActive ? 'bg-white text-[#111827] shadow-sm' : 'text-slate-600 hover:text-[#111827]'}`}
               >
                 <span className="font-sans">{tab.label}</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold ${isActive ? 'bg-[#5B4DFF] text-white' : 'bg-slate-200 text-slate-600'}`}>
+                <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold ${isActive ? 'bg-[#06B6D4] text-white' : 'bg-slate-200 text-slate-600'}`}>
                   {tab.count}
                 </span>
               </button>
@@ -102,7 +116,7 @@ export default function ProjectsPage() {
             <p className="text-sm font-sans">لا توجد مشاريع تطابق خيارات الفلترة أو البحث الحالية.</p>
             <button 
               onClick={() => { setActiveFilter('الكل'); setSearchQuery(''); }}
-              className="text-xs text-[#5B4DFF] font-bold hover:underline font-sans"
+              className="text-xs text-[#06B6D4] font-bold hover:underline font-sans"
             >
               إعادة ضبط الفلاتر
             </button>
@@ -132,11 +146,11 @@ export default function ProjectsPage() {
                   <div className="space-y-1.5">
                     <div className="flex justify-between items-center text-[10px] font-bold font-sans">
                       <span className="text-slate-500">نسبة الإنجاز</span>
-                      <span className="text-[#5B4DFF]">{project.progress}%</span>
+                      <span className="text-[#06B6D4]">{project.progress}%</span>
                     </div>
                     <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                       <div 
-                        className="bg-[#5B4DFF] h-1.5 rounded-full transition-all duration-500" 
+                        className="bg-[#06B6D4] h-1.5 rounded-full transition-all duration-500" 
                         style={{ width: `${project.progress}%` }}
                       />
                     </div>
@@ -163,7 +177,7 @@ export default function ProjectsPage() {
           {/* Projects List Table */}
           <Card className="border border-slate-200/80 shadow-sm overflow-hidden">
             <CardHeader className="bg-slate-50/50 border-b border-slate-200/60 px-6 py-4 flex items-center gap-2">
-              <BarChart3 size={16} className="text-[#5B4DFF]" />
+              <BarChart3 size={16} className="text-[#06B6D4]" />
               <h3 className="font-bold text-sm text-[#111827] font-sans">جدول المشاريع التفصيلي</h3>
             </CardHeader>
             <div className="w-full overflow-x-auto">
@@ -186,7 +200,7 @@ export default function ProjectsPage() {
                       <td className="px-6 py-4 text-center">
                         <div className="flex items-center justify-center gap-2 max-w-[120px] mx-auto">
                           <div className="w-16 bg-slate-150 h-1 rounded-full overflow-hidden">
-                            <div className="bg-[#5B4DFF] h-1 rounded-full" style={{ width: `${project.progress}%` }} />
+                            <div className="bg-[#06B6D4] h-1 rounded-full" style={{ width: `${project.progress}%` }} />
                           </div>
                           <span className="font-bold font-sans text-[10px] text-slate-700">{project.progress}%</span>
                         </div>

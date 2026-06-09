@@ -1,228 +1,378 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap');
-
+/* ─────────────────────────────────────────────────────────────
+   Tailwind (MUST come before any custom CSS)
+──────────────────────────────────────────────────────────────*/
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-* {
-  @apply box-border;
+/* NOTE: Use local/system font stack in development and production.
+   Avoid next/font/google so local pages never wait on external font downloads.
+──────────────────────────────────────────────────────────────*/
+
+/* ─────────────────────────────────────────────────────────────
+   DESIGN TOKENS
+──────────────────────────────────────────────────────────────*/
+:root {
+  /* Default: Dark Mode */
+  --bg-main: #0B132B;
+  --bg-secondary: #0f1e3a;
+  --bg-card: rgba(255, 255, 255, 0.02);
+  --bg-card-hover: rgba(255, 255, 255, 0.055);
+  --text-main: #FFFFFF;
+  --text-muted: #94a3b8;       /* was #8b99ae — slightly brighter */
+  --text-dim: #7d8a9e;
+  --border-color: rgba(255, 255, 255, 0.06);
+  --border-glass: rgba(255, 255, 255, 0.06);
+  --card-shadow: none;
+
+  --navy:         #0B132B;
+  --navy-light:   #111C3A;
+  --navy-mid:     #16223F;
+  --cyan:         #06B6D4;
+  --cyan-dark:    #0891B2;
+  --emerald:      #22C55E;
+  --slate-text:   #94A3B8;
+  --border:       var(--border-color);
+  --border-cyan:  rgba(6,182,212,0.18);
+  --font-ar: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, system-ui, -apple-system, sans-serif;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BASE
+──────────────────────────────────────────────────────────────*/
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
 html {
   direction: rtl;
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 font-sans;
+  font-family: var(--font-ar);
+  font-weight: 500;                     /* ← default body weight: 500 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  line-height: 1.7;                     /* ← comfortable Arabic line-height */
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* ============================================================================
-   BASE COMPONENTS
-   ============================================================================ */
+.dark-invert {
+  filter: brightness(0) invert(1);
+}
 
-/* Buttons */
+/* ─────────────────────────────────────────────────────────────
+   TYPOGRAPHY SCALE
+──────────────────────────────────────────────────────────────*/
+.display-xl {
+  font-size: clamp(2.2rem, 5vw, 3.75rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.display-lg {
+  font-size: clamp(1.75rem, 3.5vw, 2.6rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+.body-lg {
+  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+  line-height: 1.75;
+  font-weight: 500;                     /* ← was 300, now 500 */
+}
+
+.body-sm {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.label-sm {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TEXT UTILITY HELPERS
+──────────────────────────────────────────────────────────────*/
+.text-muted-dark  { color: #94a3b8; }  /* readable on dark bg */
+.text-muted-light { color: #475569; }  /* readable on light bg */
+.text-secondary   { font-weight: 500; color: #475569; }
+
+/* ─────────────────────────────────────────────────────────────
+   GLASS SURFACES
+──────────────────────────────────────────────────────────────*/
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  border-radius: 20px;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(6, 182, 212, 0.2);
+  transform: translateY(-2px);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BUTTONS (homepage dark variants)
+──────────────────────────────────────────────────────────────*/
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  background: var(--cyan);
+  color: var(--navy);
+  font-family: var(--font-ar);
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-primary:hover {
+  background: var(--cyan-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(6, 182, 212, 0.3);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  background: transparent;
+  color: rgba(255,255,255,0.9);         /* ← was 0.8, now more readable */
+  font-family: var(--font-ar);
+  font-weight: 600;                     /* ← was 500, now 600 */
+  font-size: 0.875rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-ghost:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.25);
+  color: #fff;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BADGES
+──────────────────────────────────────────────────────────────*/
+.badge-cyan {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.85rem;
+  background: rgba(6, 182, 212, 0.12);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  color: #22d3ee;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.badge-emerald {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.85rem;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LAYOUT CONTAINERS
+──────────────────────────────────────────────────────────────*/
+.container-xl {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ANIMATIONS
+──────────────────────────────────────────────────────────────*/
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.65); opacity: 0; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Infinite marquee — track is 3× list; shifting −33.333% = 1 copy */
+@keyframes marquee-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-33.3333%); }
+}
+
+.animate-float        { animation: float-slow 6s ease-in-out infinite; }
+.animate-float-delay  { animation: float-slow 6s ease-in-out 2s infinite; }
+.animate-fade-up      { animation: fade-up 0.7s ease both; }
+.animate-fade-up-1    { animation: fade-up 0.7s ease 0.12s both; }
+
+/* ─────────────────────────────────────────────────────────────
+   TAILWIND COMPONENT OVERRIDES (used in /request & /auth pages)
+──────────────────────────────────────────────────────────────*/
+@layer base {
+  input, textarea, select {
+    color: #0B132B !important;
+    font-weight: 500 !important;        /* ← input values: 500 */
+  }
+
+  /* Placeholder text: stronger color for readability */
+  input::placeholder,
+  textarea::placeholder {
+    color: #64748b !important;          /* ← slate-500 instead of slate-400 */
+    font-weight: 400 !important;
+  }
+
+  /* Headings hierarchy */
+  h1 { font-weight: 700; line-height: 1.25; }
+  h2 { font-weight: 700; line-height: 1.3; }
+  h3 { font-weight: 600; line-height: 1.35; }
+  h4 { font-weight: 600; line-height: 1.4; }
+  h5, h6 { font-weight: 600; }
+}
+
 @layer components {
-  .btn-base {
-    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2;
-  }
 
-  .btn-primary {
-    @apply btn-base bg-primary-navy text-white hover:bg-blue-900 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .btn-secondary {
-    @apply btn-base bg-slate-100 text-slate-900 hover:bg-slate-200 active:scale-95 disabled:opacity-50;
-  }
-
-  .btn-danger {
-    @apply btn-base bg-red-600 text-white hover:bg-red-700 active:scale-95 disabled:opacity-50;
-  }
-
-  /* Forms */
+  /* Form inputs */
   .input-base {
-    @apply w-full px-3 py-2 border border-slate-300 rounded-lg font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary-purple focus:border-transparent transition-all;
+    @apply w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm
+           focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-transparent
+           transition-all bg-white;
+    font-family: var(--font-ar);
+    font-weight: 500;
+    color: #0B132B;
+  }
+
+  .input-base::placeholder {
+    color: #64748b;
+    font-weight: 400;
   }
 
   .label-base {
-    @apply block text-sm font-medium text-slate-700 mb-1;
+    @apply block text-sm text-slate-700 mb-1;
+    font-family: var(--font-ar);
+    font-weight: 600;                   /* ← form labels: 600 */
   }
 
-  /* Cards */
+  /* Cards (light pages) */
   .card {
-    @apply bg-white rounded-xl border border-slate-200/80 shadow-sm;
+    @apply bg-white rounded-2xl border border-slate-200/80 shadow-sm;
+  }
+  .card-header { @apply px-6 py-4 border-b border-slate-200/80; }
+  .card-body   { @apply px-6 py-4; }
+  .card-footer { @apply px-6 py-4 border-t border-slate-200 bg-slate-50/60 rounded-b-2xl; }
+
+  .card-title {
+    font-weight: 600;
+    color: #111827;
+    font-family: var(--font-ar);
   }
 
-  .card-header {
-    @apply px-6 py-4 border-b border-slate-200/80;
-  }
+  /* Badges — font-weight enforced at component level */
+  .badge          { @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold; }
+  .badge-success  { @apply badge bg-emerald-100 text-emerald-800; }
+  .badge-warning  { @apply badge bg-amber-100   text-amber-800; }
+  .badge-danger   { @apply badge bg-red-100     text-red-800; }
+  .badge-info     { @apply badge bg-cyan-100    text-cyan-800; }
+  .badge-default  { @apply badge bg-slate-100   text-slate-700; }
 
-  .card-body {
-    @apply px-6 py-4;
+  /* Buttons (Tailwind variants used in forms) */
+  .btn-base {
+    @apply px-4 py-2 rounded-xl transition-all duration-200
+           flex items-center justify-center gap-2;
+    font-family: var(--font-ar);
+    font-weight: 600;                   /* ← buttons: 600 */
   }
-
-  .card-footer {
-    @apply px-6 py-4 border-t border-slate-200 bg-slate-50;
-  }
-
-  /* Badges */
-  .badge {
-    @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium;
-  }
-
-  .badge-success {
-    @apply badge bg-emerald-100 text-emerald-800;
-  }
-
-  .badge-warning {
-    @apply badge bg-amber-100 text-amber-800;
-  }
-
-  .badge-danger {
-    @apply badge bg-red-100 text-red-800;
-  }
-
-  .badge-info {
-    @apply badge bg-blue-100 text-blue-800;
-  }
-
-  .badge-default {
-    @apply badge bg-slate-100 text-slate-800;
-  }
+  .btn-blue   { @apply btn-base bg-[#06B6D4] text-white hover:bg-[#0891B2] shadow-sm active:scale-95; }
+  .btn-dark   { @apply btn-base bg-[#0B132B] text-white hover:bg-[#16223F] active:scale-95; }
+  .btn-light  { @apply btn-base bg-slate-100 text-slate-800 hover:bg-slate-200 active:scale-95; }
+  .btn-danger { @apply btn-base bg-red-600   text-white hover:bg-red-700 active:scale-95; }
 
   /* Tables */
-  .table-base {
-    @apply w-full text-sm;
-  }
-
-  .table-head {
-    @apply bg-slate-100 border-b border-slate-200;
-  }
-
-  .table-row {
-    @apply border-b border-slate-200 hover:bg-slate-50 transition-colors;
-  }
-
-  .table-cell {
-    @apply px-4 py-3;
-  }
+  .table-base { @apply w-full text-sm; }
+  .table-head { @apply bg-slate-50 border-b border-slate-200 text-slate-600; }
+  .table-row  { @apply border-b border-slate-100 hover:bg-slate-50 transition-colors; }
+  .table-cell { @apply px-4 py-3; }
 
   /* Alerts */
-  .alert {
-    @apply rounded-lg p-4 flex gap-3;
-  }
-
-  .alert-success {
-    @apply alert bg-emerald-50 border border-emerald-200 text-emerald-800;
-  }
-
-  .alert-error {
-    @apply alert bg-red-50 border border-red-200 text-red-800;
-  }
-
-  .alert-warning {
-    @apply alert bg-amber-50 border border-amber-200 text-amber-800;
-  }
-
-  .alert-info {
-    @apply alert bg-blue-50 border border-blue-200 text-blue-800;
-  }
+  .alert         { @apply rounded-xl p-4 flex gap-3 text-sm; }
+  .alert-success { @apply alert bg-emerald-50 border border-emerald-200 text-emerald-800; }
+  .alert-error   { @apply alert bg-red-50     border border-red-200     text-red-800; }
+  .alert-warning { @apply alert bg-amber-50   border border-amber-200   text-amber-800; }
+  .alert-info    { @apply alert bg-cyan-50    border border-cyan-200    text-cyan-800; }
 }
 
-/* ============================================================================
-   LAYOUT
-   ============================================================================ */
-
+/* ─────────────────────────────────────────────────────────────
+   LAYOUT HELPERS (dashboard / sidebar)
+──────────────────────────────────────────────────────────────*/
 .sidebar {
   @apply fixed right-0 top-0 h-screen w-64 bg-white border-l border-slate-200 shadow-lg z-40;
 }
+.topbar           { @apply sticky top-0 z-30 bg-white border-b border-slate-200 shadow-sm; }
+.dashboard-layout { @apply flex h-screen; }
+.dashboard-content{ @apply flex-1 overflow-auto; }
+.main-wrapper     { @apply p-6; }
 
-.sidebar.mobile-open {
-  @apply translate-x-0;
-}
+/* ─────────────────────────────────────────────────────────────
+   SCROLLBAR
+──────────────────────────────────────────────────────────────*/
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: rgba(6,182,212,0.35); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(6,182,212,0.55); }
 
-.sidebar.mobile-closed {
-  @apply translate-x-full;
-}
-
-.topbar {
-  @apply sticky top-0 z-30 bg-white border-b border-slate-200 shadow-sm;
-}
-
-.dashboard-layout {
-  @apply flex h-screen;
-}
-
-.dashboard-content {
-  @apply flex-1 overflow-auto;
-}
-
-.main-wrapper {
-  @apply p-6;
-}
-
-/* ============================================================================
-   UTILITIES
-   ============================================================================ */
-
-.text-truncate {
-  @apply truncate;
-}
-
-.text-ellipsis {
-  @apply line-clamp-3;
-}
-
-.fade-in {
-  @apply animate-fade-in;
-}
-
-.slide-in {
-  @apply animate-slide-in;
-}
-
-/* ============================================================================
-   SCROLLBAR STYLING
-   ============================================================================ */
-
-::-webkit-scrollbar {
-  @apply w-2 h-2;
-}
-
-::-webkit-scrollbar-track {
-  @apply bg-slate-100;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-slate-300 rounded-lg;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-slate-400;
-}
-
-/* ============================================================================
+/* ─────────────────────────────────────────────────────────────
    ACCESSIBILITY
-   ============================================================================ */
-
+──────────────────────────────────────────────────────────────*/
 @media (prefers-reduced-motion: reduce) {
-  * {
-    @apply !animate-none !transition-none;
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
 @media (max-width: 768px) {
-  html {
-    font-size: 14px;
-  }
-
-  .card {
-    @apply rounded-md;
-  }
-
-  .btn-base {
-    @apply px-3 py-2 text-sm;
-  }
+  html { font-size: 15px; }
 }

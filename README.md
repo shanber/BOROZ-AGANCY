@@ -1,339 +1,233 @@
-# Salla Marketing Platform - MVP
-## منصة تسويق وخدمات رقمية متكاملة
+# BOROZ / بروز
 
-**Version**: 0.1.0 (Phase 1)  
-**Status**: Phase 1 - Setup & UI (Complete ✅)
+## منصة خدمات متاجر سلة
 
----
+BOROZ is a specialized marketplace for Salla merchants. It connects merchants with reviewed service providers and freelancers to execute store-related service requests with clear scope, organized workflow, and protected rights for both sides.
 
-## 📋 نظرة عامة
+The platform is focused on Salla store services, provider onboarding, request management, and a future controlled project workflow inside BOROZ.
 
-منصة **SaaS متكاملة** لتجار سلة لطلب ومتابعة خدمات التسويق والتصميم. المنصة مبنية على:
+BOROZ is not a generic SaaS, CRM, or marketing agency.
 
-- **Next.js 14** (App Router)
-- **TypeScript** (Strict Mode)
-- **Tailwind CSS** (with RTL support)
-- **Prisma** (PostgreSQL)
-- **NextAuth** (coming in Phase 2)
+BOROZ is an independent platform and is not officially affiliated with, endorsed by, or partnered with Salla or the listed third-party tools unless explicitly stated.
 
 ---
 
-## 🚀 البدء السريع
+## Project Overview
 
-### المتطلبات
-- Node.js >= 18.17.0
-- PostgreSQL (or Neon)
-- npm or yarn
+BOROZ helps Salla merchants submit service requests, track their orders, and eventually compare provider offers, approve contracts, manage project delivery, and keep project communication inside the platform.
 
-### التثبيت
+The current product direction is a managed marketplace:
+
+- Merchants create service requests from an authenticated dashboard.
+- Providers apply to join BOROZ, select service specialties, and submit portfolio/work samples.
+- Admin reviews provider applications before providers can operate in the platform.
+- Future project work should be handled through a BOROZ project or order workspace.
+
+---
+
+## Current Tech Stack
+
+- Next.js App Router
+- TypeScript
+- Tailwind CSS
+- Prisma
+- PostgreSQL / Neon
+- NextAuth
+- RTL Arabic UI
+
+---
+
+## Current Implemented Features
+
+- Authentication with NextAuth
+- Merchant registration
+- Provider registration
+- Provider service selection during onboarding
+- Portfolio/work samples requirement for providers
+- Admin provider approval workflow
+- Role-based dashboard navigation
+- Merchant dashboard
+- Real merchant request flow
+- Orders scoped to the current merchant
+- Western digits formatting across UI
+- Placeholder pages for future modules
+
+---
+
+## Current Roles
+
+### ADMIN
+
+Manages provider approval and platform operations.
+
+### MERCHANT
+
+Creates and tracks service requests for their Salla store.
+
+### PROVIDER
+
+Applies as a service provider, selects services, submits portfolio/work samples, and waits for admin approval.
+
+---
+
+## Current Main Routes
+
+- `/`
+- `/login`
+- `/register`
+- `/register/merchant`
+- `/register/provider`
+- `/dashboard`
+- `/dashboard/orders`
+- `/dashboard/orders/new`
+- `/dashboard/orders/[id]`
+- `/dashboard/offers`
+- `/dashboard/contracts`
+- `/dashboard/files`
+- `/dashboard/invoices`
+- `/dashboard/messages`
+- `/dashboard/settings`
+- `/dashboard/admin/providers`
+- `/dashboard/admin/providers/[id]`
+- `/dashboard/provider/pending`
+- `/request`
+
+---
+
+## Database / Prisma Overview
+
+Important current models include:
+
+- `User`: authenticated platform users with role assignment.
+- `Organization`: merchant/store organization context.
+- `OrganizationMember`: links users to organizations.
+- `ExpertProfile`: provider profile and approval status.
+- `ServiceCategory`: global service categories.
+- `Service`: available service definitions.
+- `ExpertService`: provider-to-service specialization mapping.
+- `PortfolioItem`: provider portfolio/work samples.
+- `Order`: merchant service requests scoped to the owning merchant/user. Order ownership is scoped through `userId`, `orgId`, and `merchantId` where available, so merchants only see their own requests.
+
+---
+
+## Development Setup
 
 ```bash
-# 1. Clone the repository
-git clone <repo-url>
-cd salla-marketing-mvp
-
-# 2. Install dependencies
 npm install
+```
 
-# 3. Copy environment file
-cp .env.example .env.local
+Copy `.env.example` to `.env`, then configure the database connection:
 
-# 4. Configure database in .env.local
-# DATABASE_URL="postgresql://user:password@localhost:5432/salla_marketing"
+```bash
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
+DIRECT_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
+NEXTAUTH_SECRET="replace-with-a-local-secret"
+NEXTAUTH_URL="http://localhost:3000"
+```
 
-# 5. Run Prisma migrations
-npm run prisma:push
+Generate Prisma Client and sync the database schema:
 
-# 6. Seed database
-npm run prisma:seed
+```bash
+npx prisma generate
+npx prisma db push
+```
 
-# 7. Start development server
+Windows PowerShell note: if script execution policy blocks `npx`, use the Windows command shim instead:
+
+```bash
+npx.cmd prisma generate
+npx.cmd prisma db push
+```
+
+Start the development server:
+
+```bash
 npm run dev
 ```
 
-**سيكون التطبيق متاحاً على**: `http://localhost:3000`
+The app runs locally at:
 
----
-
-## 📐 البنية المعمارية
-
-### Database Schema
-
-```
-Organization (Tenant)
-├─ OrganizationMember (RBAC)
-├─ OrganizationPlan (SaaS Plans)
-├─ Merchant (Salla Merchants)
-├─ Lead (CRM - Potential Customers)
-├─ Service (Global System Services)
-├─ ServiceOrder (Customer Orders)
-├─ Project (Project Management)
-├─ Task (Task Management)
-├─ FileAsset (File Attachments)
-├─ LandingPage (Landing Pages)
-├─ Notification (In-App Notifications)
-└─ ActivityLog (Audit Trail)
-```
-
-### Folder Structure
-
-```
-app/
-├─ (auth)/                 # Authentication pages
-│  ├─ login/
-│  ├─ register/
-│  └─ layout.tsx
-├─ (dashboard)/            # Dashboard pages
-│  ├─ merchants/
-│  ├─ leads/
-│  ├─ orders/
-│  ├─ projects/
-│  ├─ tasks/
-│  ├─ reports/
-│  ├─ settings/
-│  └─ layout.tsx
-├─ api/                    # API routes (Phase 2+)
-├─ components/
-│  ├─ ui/                  # Base UI components
-│  │  ├─ Button.tsx
-│  │  ├─ Input.tsx
-│  │  ├─ Card.tsx
-│  │  ├─ Badge.tsx
-│  │  ├─ Sidebar.tsx
-│  │  └─ Topbar.tsx
-│  └─ ...
-├─ lib/
-│  ├─ prisma.ts           # Prisma client
-│  ├─ auth.ts             # Auth helpers
-│  ├─ constants.ts        # Enums & constants
-│  ├─ types.ts            # TypeScript types
-│  └─ utils.ts            # Utility functions
-├─ globals.css            # Global styles
-├─ layout.tsx             # Root layout
-└─ page.tsx               # Home page redirect
+```text
+http://localhost:3000
 ```
 
 ---
 
-## 🎨 الميزات المتاحة في Phase 1
+## Environment Variables
 
-### ✅ Completed
-- [x] Next.js 14 setup
-- [x] TypeScript strict mode
-- [x] Tailwind CSS + RTL support
-- [x] Prisma with PostgreSQL
-- [x] Database schema (14 models)
-- [x] Seed data script
-- [x] Base UI components (Button, Input, Card, Badge)
-- [x] Layout system (Sidebar, Topbar)
-- [x] Authentication pages (UI only - no backend)
-- [x] Dashboard page (mock data)
-- [x] Placeholder pages for future phases
-- [x] Type definitions & constants
-- [x] Utility functions & helpers
-- [x] Environment configuration
-
-### ⏳ Coming in Phase 2+
-- [ ] NextAuth implementation
-- [ ] User registration & login
-- [ ] Multi-tenant isolation
-- [ ] RBAC enforcement
-- [ ] CRM (Merchants & Leads)
-- [ ] Orders management
-- [ ] Projects & Tasks
-- [ ] Landing Pages
-- [ ] Reports & Analytics
-- [ ] File uploads
-- [ ] Notifications system
-- [ ] Email/SMS integration
-
----
-
-## 🔑 Demo Credentials
-
-```
-📧 Email: admin@example.com
-🔐 Password: ChangeMe123!
-```
-
-*Note: Authentication is not yet implemented. These are for reference only.*
-
----
-
-## 📝 الأوامر المتاحة
+Use examples only. Do not commit real secrets.
 
 ```bash
-# Development
-npm run dev              # Start dev server
-
-# Build & Production
-npm run build            # Build for production
-npm start                # Start production server
-
-# Database
-npm run prisma:migrate   # Create migrations
-npm run prisma:push      # Push schema to database
-npm run prisma:seed      # Run seed script
-npm run prisma:studio    # Open Prisma Studio
-
-# Linting
-npm run lint             # Run ESLint
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
+DIRECT_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
+NEXTAUTH_SECRET="replace-with-a-secure-secret"
+NEXTAUTH_URL="http://localhost:3000"
 ```
 
 ---
 
-## 🗄️ Database Configuration
+## Current Phase
 
-### Neon (Recommended for MVP)
+The platform is in early MVP development.
 
-```bash
-# 1. Create account at https://neon.tech
-# 2. Copy connection string
-# 3. Add to .env.local:
-DATABASE_URL="postgresql://user:password@ep-*.neon.tech/neon?sslmode=require"
-```
+Implemented:
 
-### Local PostgreSQL
+- Core authentication
+- Provider onboarding
+- Admin provider approval
+- Merchant request creation
+- Merchant-scoped order visibility
 
-```bash
-# 1. Install PostgreSQL
-# 2. Create database
-createdb salla_marketing
+Not implemented yet:
 
-# 3. Add to .env.local:
-DATABASE_URL="postgresql://postgres:password@localhost:5432/salla_marketing"
-```
-
----
-
-## 🔐 Security Checklist
-
-- [x] Environment variables (.env.local)
-- [x] Prisma client singleton pattern
-- [x] TypeScript strict mode
-- [x] Input validation utilities
-- [x] Password hashing helpers (bcryptjs)
-- [ ] Authentication middleware (Phase 2)
-- [ ] CSRF protection (Phase 2)
-- [ ] Rate limiting (Phase 2)
-- [ ] SQL injection prevention (via Prisma)
+- Offers
+- Contracts
+- Payments
+- Project workspace
+- Chat
+- Escrow
 
 ---
 
-## 📊 الأدوار (Roles)
+## Roadmap
 
-```
-SUPER_ADMIN     → Founder - Full access
-ADMIN           → Organization admin
-PROJECT_MANAGER → Manage projects & team
-DESIGNER        → Execute design tasks
-MARKETER        → CRM & marketing
-CLIENT          → Merchant (read-only)
-```
+Next phases:
 
----
-
-## 💳 SaaS Plans
-
-```
-FREE        → 10 leads/month
-STARTER     → 100 leads/month
-PRO         → 1000 leads/month
-ENTERPRISE  → Unlimited
-```
-
-*Billing implementation coming in Phase 3+*
+- Admin request review
+- Provider offers
+- Merchant offer selection
+- Contract generation
+- Project workspace
+- In-platform chat/files
+- Delivery/revisions
+- Payments/escrow later
 
 ---
 
-## 🌐 Services (Global)
+## Important Product Rules
 
-The platform provides a global set of services that all organizations can use:
+- No fake public stats.
+- No fake ratings.
+- No off-platform communication after a project starts.
+- Public homepage must not imply official partnership with Salla, Tamara, Tabby, Google, Meta, or SMSA.
+- All numbers must use Western digits such as `1234`, not Arabic-Indic digits.
+- Pending providers are not called approved experts.
 
-- Logo Design
-- Website Development
-- Social Media Management
-- SEO Optimization
-- Content Writing
+Project communication policy:
 
-*Organization-specific services coming in Phase 3+*
+After a merchant request is accepted and a provider/freelancer is selected or assigned, all project-related communication must happen inside BOROZ. The general inbox can exist as a notification center, but actual project communication must live inside the project/order workspace.
 
----
-
-## 🗑️ Soft Deletes
-
-The following models support soft deletes (deletedAt field):
-
-- Merchant
-- Lead
-- ServiceOrder
-- Project
-- Task
-
-No business records are permanently deleted from the database.
+See: `docs/PRODUCT_COMMUNICATION_POLICY.md`
 
 ---
 
-## 🎯 Phase Plan
+## Notes For Contributors
 
-| Phase | Duration | Focus |
-|-------|----------|-------|
-| **1** | Week 1-2 | ✅ Setup & UI (CURRENT) |
-| **2** | Week 2-3 | Auth & Multi-tenant |
-| **3** | Week 3-4 | Layout & Base components |
-| **4** | Week 4-5 | Dashboard & Stats |
-| **5-7** | Weeks 5-10 | CRM, Orders, Projects |
-| **8** | Week 11 | Landing Pages & Reports |
-| **9** | Week 12 | RBAC & Settings |
-| **10** | Week 13 | Testing & Deployment |
+Keep the product focused on the BOROZ marketplace model:
 
----
+- Merchant request intake
+- Reviewed provider onboarding
+- Admin-mediated approval and review flows
+- Protected project execution inside BOROZ
 
-## 📚 Documentation
-
-- **Database**: See `DATABASE.md`
-- **API**: See `API.md` (coming Phase 2)
-- **Architecture**: See architecture decisions documents
-
----
-
-## 🤝 Contributing
-
-This is a solo founder MVP. Contributions will be managed differently in Phase 2+.
-
----
-
-## 📞 Support
-
-For issues and questions, please refer to the GitHub issues tracker.
-
----
-
-## 📄 License
-
-TBD
-
----
-
-## 🚦 Current Status
-
-```
-Phase 1: COMPLETE ✅
-├─ Next.js Setup ✅
-├─ TypeScript Setup ✅
-├─ Tailwind Setup ✅
-├─ Prisma Setup ✅
-├─ Folder Structure ✅
-├─ Layout System ✅
-├─ Base Components ✅
-├─ Database Schema ✅
-├─ Seed Data ✅
-└─ Environment Config ✅
-
-Ready for Phase 2 ➡️ NextAuth & Multi-tenant
-```
-
----
-
-**Last Updated**: June 2024  
-**Next Phase**: Phase 2 - Authentication & Multi-Tenant Implementation
+Do not add offers, contracts, payments, chat, project workspace, or escrow until their planned phase.

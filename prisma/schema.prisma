@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ============================================================================
@@ -15,34 +16,43 @@ datasource db {
 // ============================================================================
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  password      String    // bcrypt hashed
-  phone         String?
-  avatar        String?
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id         String   @id @default(cuid())
+  email      String   @unique
+  name       String?
+  password   String // bcrypt hashed
+  phone      String?
+  avatar     String?
+  isActive   Boolean  @default(true)
+  globalRole UserRole @default(MERCHANT)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // Relations
   orgMembers    OrganizationMember[]
   notifications Notification[]
   assignedTasks Task[]
   activityLogs  ActivityLog[]
+  expertProfile ExpertProfile?
+  orders        Order[] // Phase 11: client orders submitted by this merchant
 
   @@map("users")
 }
 
+enum UserRole {
+  MERCHANT
+  PROVIDER
+  ADMIN
+}
+
 model Organization {
-  id            String    @id @default(cuid())
-  name          String
-  slug          String    @unique
-  logo          String?
-  website       String?
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logo      String?
+  website   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   members       OrganizationMember[]
@@ -62,14 +72,14 @@ model Organization {
 }
 
 model OrganizationMember {
-  id            String    @id @default(cuid())
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orgId         String
-  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  role          Role      @default(PROJECT_MANAGER)
-  isActive      Boolean   @default(true)
-  joinedAt      DateTime  @default(now())
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  role         Role         @default(PROJECT_MANAGER)
+  isActive     Boolean      @default(true)
+  joinedAt     DateTime     @default(now())
 
   @@unique([userId, orgId])
   @@index([orgId])
@@ -84,6 +94,7 @@ enum Role {
   DESIGNER
   MARKETER
   CLIENT
+  EXPERT
 }
 
 // ============================================================================
@@ -91,27 +102,27 @@ enum Role {
 // ============================================================================
 
 model OrganizationPlan {
-  id            String    @id @default(cuid())
-  orgId         String    @unique
-  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  
-  plan          SubscriptionPlan @default(FREE)
-  monthlyLimit  Int              @default(10)
-  currentMonth  Int              @default(0)
-  renewalDate   DateTime?
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String       @id @default(cuid())
+  orgId        String       @unique
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  plan         SubscriptionPlan @default(FREE)
+  monthlyLimit Int              @default(10)
+  currentMonth Int              @default(0)
+  renewalDate  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([orgId])
   @@map("organization_plans")
 }
 
 enum SubscriptionPlan {
-  FREE        // 10 leads/month
-  STARTER     // 100 leads/month
-  PRO         // 1000 leads/month
-  ENTERPRISE  // unlimited
+  FREE // 10 leads/month
+  STARTER // 100 leads/month
+  PRO // 1000 leads/month
+  ENTERPRISE // unlimited
 }
 
 // ============================================================================
@@ -119,18 +130,18 @@ enum SubscriptionPlan {
 // ============================================================================
 
 model Notification {
-  id            String    @id @default(cuid())
-  orgId         String
-  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  title         String
-  message       String
-  isRead        Boolean   @default(false)
-  
-  createdAt     DateTime  @default(now())
-  readAt        DateTime?
+  id           String       @id @default(cuid())
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title   String
+  message String
+  isRead  Boolean @default(false)
+
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
 
   @@index([orgId])
   @@index([userId])
@@ -144,25 +155,25 @@ model Notification {
 // ============================================================================
 
 model Merchant {
-  id            String    @id @default(cuid())
-  orgId         String
-  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  storeName     String
-  storeUrl      String
-  email         String
-  phone         String
-  contactName   String?
-  status        MerchantStatus @default(NEW)
-  notes         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime? // soft delete
+  id           String         @id @default(cuid())
+  orgId        String
+  organization Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  storeName    String
+  storeUrl     String
+  email        String
+  phone        String
+  contactName  String?
+  status       MerchantStatus @default(NEW)
+  notes        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  deletedAt    DateTime? // soft delete
 
   // Relations
-  leads         Lead[]
-  orders        ServiceOrder[]
-  projects      Project[]
-  sallaStore    SallaStore?
+  leads      Lead[]
+  orders     ServiceOrder[]
+  projects   Project[]
+  sallaStore SallaStore?
 
   @@unique([orgId, email])
   @@index([orgId])
@@ -181,21 +192,21 @@ enum MerchantStatus {
 }
 
 model Lead {
-  id            String    @id @default(cuid())
-  orgId         String
-  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  name          String
-  phone         String
-  email         String
-  storeUrl      String?
-  source        String?
-  stage         LeadStage @default(NEW)
-  notes         String?
-  merchantId    String?
-  merchant      Merchant? @relation(fields: [merchantId], references: [id], onDelete: SetNull)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime? // soft delete
+  id           String       @id @default(cuid())
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name         String
+  phone        String
+  email        String
+  storeUrl     String?
+  source       String?
+  stage        LeadStage    @default(NEW)
+  notes        String?
+  merchantId   String?
+  merchant     Merchant?    @relation(fields: [merchantId], references: [id], onDelete: SetNull)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime? // soft delete
 
   @@unique([orgId, email])
   @@index([orgId])
@@ -215,48 +226,160 @@ enum LeadStage {
 }
 
 // ============================================================================
-// SERVICES & ORDERS
+// SERVICES & CATEGORIES
 // ============================================================================
 
-model Service {
-  id            String    @id @default(cuid())
-  // NO orgId - GLOBAL services
-  name          String    @unique
-  description   String
-  basePrice     Float
-  estimatedDays Int
-  isActive      Boolean   @default(true)
-  icon          String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+enum ServiceStatus {
+  AVAILABLE
+  LIMITED
+  COMING_SOON
+  DISABLED
+}
 
-  // Relations
-  orders        ServiceOrder[]
-  projects      Project[]
+model ServiceCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique // Legacy, keep for safety
+  nameAr      String   @unique
+  nameEn      String   @unique
+  slug        String   @unique
+  sortOrder   Int      @default(0)
+  description String?
+  icon        String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  services Service[]
 
   @@index([isActive])
+  @@map("service_categories")
+}
+
+model Service {
+  id            String           @id @default(cuid())
+  // NO orgId - GLOBAL services
+  categoryId    String?
+  category      ServiceCategory? @relation(fields: [categoryId], references: [id])
+  name          String           @unique // Legacy, keep for safety
+  nameAr        String           @unique
+  nameEn        String           @unique
+  slug          String           @unique
+  description   String? // Legacy, keep for safety
+  descriptionAr String?
+  descriptionEn String?
+  status        ServiceStatus    @default(AVAILABLE)
+  sortOrder     Int              @default(0)
+  isActive      Boolean          @default(true) // Dynamic status based on experts
+  icon          String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  // Relations
+  orders         ServiceOrder[]
+  projects       Project[]
+  expertServices ExpertService[]
+  Organization   Organization?   @relation(fields: [organizationId], references: [id])
+  organizationId String?
+
+  @@index([isActive])
+  @@index([categoryId])
+  @@index([status])
   @@map("services")
 }
 
+// ============================================================================
+// EXPERTS / FREELANCERS & APPROVAL WORKFLOW
+// ============================================================================
+
+enum ProviderApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+model ExpertProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Public Profile
+  specialtyTitle    String?
+  bio               String?
+  yearsOfExperience Int?
+  portfolioUrl      String?
+  linkedinUrl       String?
+
+  // Approval Workflow
+  approvalStatus  ProviderApprovalStatus @default(PENDING)
+  reviewedAt      DateTime?
+  reviewedById    String?
+  rejectionReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  services       ExpertService[]
+  portfolioItems PortfolioItem[]
+
+  @@index([approvalStatus])
+  @@map("expert_profiles")
+}
+
+model PortfolioItem {
+  id          String        @id @default(cuid())
+  expertId    String
+  expert      ExpertProfile @relation(fields: [expertId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  projectUrl  String?
+  fileUrl     String?
+  serviceId   String? // Optionally link to a specific Service
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([expertId])
+  @@map("portfolio_items")
+}
+
+model ExpertService {
+  id        String        @id @default(cuid())
+  expertId  String
+  expert    ExpertProfile @relation(fields: [expertId], references: [id], onDelete: Cascade)
+  serviceId String
+  service   Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  // Provider-specific Service Offerings
+  startingPrice       Float?
+  typicalDeliveryDays Int?
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([expertId, serviceId])
+  @@map("expert_services")
+}
+
 model ServiceOrder {
-  id            String    @id @default(cuid())
-  orgId         String
-  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  merchantId    String
-  merchant      Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  serviceId     String
-  service       Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  description   String
-  status        OrderStatus @default(NEW)
-  notes         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime? // soft delete
+  id           String       @id @default(cuid())
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  merchantId   String
+  merchant     Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  serviceId    String
+  service      Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  description  String
+  status       OrderStatus  @default(NEW)
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime? // soft delete
 
   // Relations
-  fileAssets    FileAsset[]
-  project       Project?
-  activityLog   ActivityLog[]
+  fileAssets  FileAsset[]
+  project     Project?
+  activityLog ActivityLog[]
 
   @@index([orgId])
   @@index([merchantId])
@@ -280,28 +403,28 @@ enum OrderStatus {
 // ============================================================================
 
 model Project {
-  id            String    @id @default(cuid())
+  id            String        @id @default(cuid())
   orgId         String
-  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  organization  Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
   name          String
   merchantId    String
-  merchant      Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchant      Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   serviceId     String
-  service       Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  orderId       String    @unique
-  order         ServiceOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  service       Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  orderId       String        @unique
+  order         ServiceOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   status        ProjectStatus @default(PENDING)
   startDate     DateTime?
   dueDate       DateTime?
   completedDate DateTime?
   description   String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
   deletedAt     DateTime? // soft delete
 
   // Relations
-  tasks         Task[]
-  fileAssets    FileAsset[]
+  tasks      Task[]
+  fileAssets FileAsset[]
 
   @@unique([orgId, orderId])
   @@index([orgId])
@@ -320,23 +443,23 @@ enum ProjectStatus {
 }
 
 model Task {
-  id            String    @id @default(cuid())
-  orgId         String
-  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  projectId     String
-  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  title         String
-  description   String?
-  assignedToId  String?
-  assignedTo    User?     @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
-  status        TaskStatus @default(NOT_STARTED)
-  dueDate       DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime? // soft delete
+  id           String       @id @default(cuid())
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  projectId    String
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  assignedToId String?
+  assignedTo   User?        @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  status       TaskStatus   @default(NOT_STARTED)
+  dueDate      DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime? // soft delete
 
   // Relations
-  fileAssets    FileAsset[]
+  fileAssets FileAsset[]
 
   @@index([orgId])
   @@index([projectId])
@@ -358,24 +481,24 @@ enum TaskStatus {
 // ============================================================================
 
 model FileAsset {
-  id            String    @id @default(cuid())
-  orgId         String
-  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  
-  fileName      String
-  fileUrl       String
-  fileSize      Int?
-  fileType      String?
-  uploadedBy    String?
-  
-  orderId       String?
-  order         ServiceOrder? @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  projectId     String?
-  project       Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  taskId        String?
-  task          Task?     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  
-  createdAt     DateTime  @default(now())
+  id           String       @id @default(cuid())
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  fileName   String
+  fileUrl    String
+  fileSize   Int?
+  fileType   String?
+  uploadedBy String?
+
+  orderId   String?
+  order     ServiceOrder? @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  projectId String?
+  project   Project?      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  taskId    String?
+  task      Task?         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 
   @@index([orgId])
   @@index([orderId])
@@ -389,20 +512,20 @@ model FileAsset {
 // ============================================================================
 
 model LandingPage {
-  id            String    @id @default(cuid())
-  orgId         String
-  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  
-  title         String
-  slug          String
-  description   String?
-  ctaText       String    @default("تواصل معنا")
-  isPublished   Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String       @id @default(cuid())
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  title       String
+  slug        String
+  description String?
+  ctaText     String   @default("تواصل معنا")
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
-  submissions   LandingPageSubmission[]
+  submissions LandingPageSubmission[]
 
   @@unique([orgId, slug])
   @@index([orgId])
@@ -411,16 +534,16 @@ model LandingPage {
 }
 
 model LandingPageSubmission {
-  id              String    @id @default(cuid())
-  landingPageId   String
-  landingPage     LandingPage @relation(fields: [landingPageId], references: [id], onDelete: Cascade)
-  
-  name            String
-  email           String
-  phone           String
-  message         String?
-  storeUrl        String?
-  createdAt       DateTime  @default(now())
+  id            String      @id @default(cuid())
+  landingPageId String
+  landingPage   LandingPage @relation(fields: [landingPageId], references: [id], onDelete: Cascade)
+
+  name      String
+  email     String
+  phone     String
+  message   String?
+  storeUrl  String?
+  createdAt DateTime @default(now())
 
   @@index([landingPageId])
   @@index([email])
@@ -432,16 +555,16 @@ model LandingPageSubmission {
 // ============================================================================
 
 model SallaStore {
-  id            String    @id @default(cuid())
-  merchantId    String    @unique
-  merchant      Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  storeUrl      String
-  accessToken   String?
-  refreshToken  String?
-  connectedAt   DateTime?
-  lastSyncedAt  DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  merchantId   String    @unique
+  merchant     Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  storeUrl     String
+  accessToken  String?
+  refreshToken String?
+  connectedAt  DateTime?
+  lastSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([merchantId])
   @@map("salla_stores")
@@ -452,20 +575,65 @@ model SallaStore {
 // ============================================================================
 
 model ActivityLog {
-  id            String    @id @default(cuid())
-  orgId         String
-  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  userId        String?
-  
-  action        String    // "create", "update", "delete", "status_change"
-  entity        String    // "Merchant", "Lead", "Order", etc
-  entityId      String
-  changes       String?   // JSON
-  
-  createdAt     DateTime  @default(now())
+  id           String       @id @default(cuid())
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  userId       String?
+
+  action   String // "create", "update", "delete", "status_change"
+  entity   String // "Merchant", "Lead", "Order", etc
+  entityId String
+  changes  String? // JSON
+
+  createdAt      DateTime      @default(now())
+  User           User?         @relation(fields: [userId], references: [id])
+  ServiceOrder   ServiceOrder? @relation(fields: [serviceOrderId], references: [id])
+  serviceOrderId String?
 
   @@index([orgId])
   @@index([userId])
   @@index([createdAt])
   @@map("activity_logs")
+}
+
+// ============================================================================
+// CLIENT ORDERS (PHASE 11)
+// ============================================================================
+
+model Order {
+  id           String    @id @default(cuid())
+  orderNumber  String    @unique
+  // ── Merchant ownership (data isolation) ──────────────────────
+  userId       String? // The User who submitted this order (MERCHANT)
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  orgId        String?
+  merchantId   String?
+  // ─────────────────────────────────────────────────────────────
+  storeName    String
+  managerName  String
+  phone        String
+  email        String?
+  sallaUrl     String?
+  serviceType  String
+  budget       String?
+  priority     String    @default("عادي")
+  description  String
+  notes        String?
+  status       String    @default("SUBMITTED")
+  adminNote    String?
+  internalNote String?
+  reviewedAt   DateTime?
+  reviewedById String?
+  source       String    @default("website")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([orgId])
+  @@index([merchantId])
+  @@index([status])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([serviceType, createdAt])
+  @@map("orders")
 }
