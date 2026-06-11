@@ -6,34 +6,33 @@ const config = {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          navy: '#0B132B',
-          purple: '#06B6D4',
-          cyan: '#06B6D4',
-          green: '#22C55E',
-          light: '#F8FAFC',
-          dark: '#111827',
-          muted: '#475569',
+        navy: {
+          900: '#0F172A',
+          800: '#1E3A8A',
         },
-        brand: {
-          bg: '#F8FAFC',
-          surface: '#FFFFFF',
-          border: '#E2E8F0',
-          accent: '#2563EB',
-          'accent-light': '#EFF6FF',
-          muted: '#64748B',
-          navy: '#0B132B',
+        blue: {
+          600: '#2563EB',
+        },
+        bg: {
+          primary: '#F8FAFC',
+          card: '#FFFFFF',
+          subtle: '#F1F5F9',
+        },
+        text: {
+          primary: '#111827',
+          secondary: '#475569',
+          tertiary: '#64748B',
+        },
+        border: {
+          DEFAULT: '#E2E8F0',
+          light: '#CBD5E1',
         },
         status: {
-          success: '#10B981',
-          warning: '#F59E0B',
-          danger: '#EF4444',
-          info: '#3B82F6',
+          success: '#16A34A',
+          warning: '#D97706',
+          danger: '#DC2626',
+          info: '#2563EB',
         },
-        main: 'var(--bg-main)',
-        card: 'var(--bg-card)',
       },
       textColor: {
         main: 'var(--text-main)',
@@ -44,13 +43,15 @@ const config = {
         glass: 'var(--border-glass)',
       },
       fontFamily: {
-        sans: ['Tajawal', 'Rubik', 'IBM Plex Sans Arabic', 'system-ui', 'sans-serif'],
+        sans: ['Tajawal', 'Cairo', 'IBM Plex Sans Arabic', 'system-ui', 'sans-serif'],
+        display: ['Tajawal', 'Cairo', 'sans-serif'],
         mono: ['Fira Code', 'monospace'],
-        display: ['Tajawal', 'Rubik', 'sans-serif'],
-        numeric: ['Inter', 'system-ui', 'sans-serif'],
       },
-      spacing: {
-        safe: 'max(1rem, env(safe-area-inset-bottom))',
+      boxShadow: {
+        sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        md: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+        none: 'none',
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in',
@@ -65,6 +66,12 @@ const config = {
           '0%': { transform: 'translateY(10px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
+      },
+      borderRadius: {
+        sm: '4px',
+        DEFAULT: '8px',
+        md: '10px',
+        lg: '12px',
       },
     },
   },

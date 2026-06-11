@@ -70,18 +70,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <aside
-      className={`fixed right-0 top-0 h-screen w-[260px] bg-white border-l border-slate-200 z-50 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${
+      className={`fixed right-0 top-0 h-screen w-[260px] bg-navy-900 border-l border-navy-800 z-50 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
-      <div className="relative p-5 border-b border-slate-100 flex items-center justify-center shrink-0">
+      <div className="relative p-6 border-b border-navy-800 flex items-center justify-center shrink-0">
         <Link
           href="/dashboard"
           onClick={onClose}
           className="flex flex-col items-center text-center gap-1"
         >
           <Image src="/شعار%20بروز.svg" alt="بروز" width={90} height={32} className="h-8 w-auto object-contain" />
-          <span className="mt-0.5 w-full text-center text-[10px] font-semibold tracking-wide text-slate-400">
+          <span className="mt-0.5 w-full text-center text-[10px] font-semibold tracking-wide text-slate-400 dark:text-slate-400">
             {globalRole === 'ADMIN'
               ? 'لوحة تحكم الإدارة'
               : globalRole === 'PROVIDER'
@@ -107,29 +107,27 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               key={item.href}
               href={item.href}
               onClick={onClose}
-              className={`flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition-all duration-200 group ${
+              className={`flex items-center gap-3.5 px-4 py-2.5 rounded-lg transition-all duration-200 group ${
                 active
-                  ? 'bg-blue-50 text-blue-600 font-semibold'
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                  ? 'bg-blue-600 text-white font-semibold'
+                  : 'text-slate-300 hover:bg-navy-800 hover:text-white'
               }`}
             >
-              <Icon size={18} className={`transition-colors duration-200 shrink-0 ${
-                active ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
-              }`} />
+              <Icon size={18} className="transition-colors duration-200 shrink-0" />
               <span className="text-sm font-display">{item.label}</span>
-              {active && <span className="w-1 h-1 rounded-full bg-blue-600 mr-auto" />}
+              {active && <span className="w-1 h-1 rounded-full bg-white mr-auto" />}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-slate-100 shrink-0">
+      <div className="p-4 border-t border-navy-800 shrink-0">
         <button
           onClick={() => {
             signOut({ callbackUrl: '/login' });
             onClose();
           }}
-          className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-semibold text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+          className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-semibold text-slate-300 hover:text-white hover:bg-red-600 rounded-lg transition-colors"
         >
           <LogOut size={18} />
           <span className="font-display">تسجيل الخروج</span>
