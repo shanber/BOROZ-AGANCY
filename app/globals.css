@@ -13,13 +13,12 @@
    DESIGN TOKENS
 ──────────────────────────────────────────────────────────────*/
 :root {
-  /* Default: Dark Mode */
   --bg-main: #0B132B;
   --bg-secondary: #0f1e3a;
   --bg-card: rgba(255, 255, 255, 0.02);
   --bg-card-hover: rgba(255, 255, 255, 0.055);
   --text-main: #FFFFFF;
-  --text-muted: #94a3b8;       /* was #8b99ae — slightly brighter */
+  --text-muted: #94a3b8;
   --text-dim: #7d8a9e;
   --border-color: rgba(255, 255, 255, 0.06);
   --border-glass: rgba(255, 255, 255, 0.06);
@@ -34,7 +33,8 @@
   --slate-text:   #94A3B8;
   --border:       var(--border-color);
   --border-cyan:  rgba(6,182,212,0.18);
-  --font-ar: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, system-ui, -apple-system, sans-serif;
+  --font-ar: 'Tajawal', 'Rubik', 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, system-ui, -apple-system, sans-serif;
+  --font-num: 'Inter', 'system-ui', sans-serif;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -52,13 +52,14 @@ html {
 
 body {
   font-family: var(--font-ar);
-  font-weight: 500;                     /* ← default body weight: 500 */
+  font-weight: 400;                     /* ← Rubik 400 body text */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   background-color: var(--bg-main);
   color: var(--text-main);
   line-height: 1.7;                     /* ← comfortable Arabic line-height */
+  letter-spacing: 0;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -238,10 +239,10 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Infinite marquee — track is 3× list; shifting −33.333% = 1 copy */
+/* Infinite marquee — track is 2× list; shifting −50% = 1 copy */
 @keyframes marquee-scroll {
   0%   { transform: translateX(0); }
-  100% { transform: translateX(-33.3333%); }
+  100% { transform: translateX(-50%); }
 }
 
 .animate-float        { animation: float-slow 6s ease-in-out infinite; }
@@ -278,11 +279,13 @@ body {
   /* Form inputs */
   .input-base {
     @apply w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm
-           focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-transparent
-           transition-all bg-white;
+           hover:border-slate-300
+           focus:outline-none focus:ring-2 focus:ring-[#06B6D4]/35 focus:border-[#06B6D4]
+           transition-colors bg-white;
     font-family: var(--font-ar);
     font-weight: 500;
     color: #0B132B;
+    min-height: 2.75rem;
   }
 
   .input-base::placeholder {
@@ -301,7 +304,7 @@ body {
     @apply bg-white rounded-2xl border border-slate-200/80 shadow-sm;
   }
   .card-header { @apply px-6 py-4 border-b border-slate-200/80; }
-  .card-body   { @apply px-6 py-4; }
+  .card-body   { @apply px-6 py-5; }
   .card-footer { @apply px-6 py-4 border-t border-slate-200 bg-slate-50/60 rounded-b-2xl; }
 
   .card-title {
@@ -325,10 +328,11 @@ body {
     font-family: var(--font-ar);
     font-weight: 600;                   /* ← buttons: 600 */
   }
-  .btn-blue   { @apply btn-base bg-[#06B6D4] text-white hover:bg-[#0891B2] shadow-sm active:scale-95; }
-  .btn-dark   { @apply btn-base bg-[#0B132B] text-white hover:bg-[#16223F] active:scale-95; }
-  .btn-light  { @apply btn-base bg-slate-100 text-slate-800 hover:bg-slate-200 active:scale-95; }
-  .btn-danger { @apply btn-base bg-red-600   text-white hover:bg-red-700 active:scale-95; }
+  .btn-blue      { @apply btn-base bg-[#06B6D4] text-white hover:bg-[#0891B2] shadow-sm active:scale-95; }
+  .btn-secondary { @apply btn-base bg-white border border-slate-200 text-[#0B132B] hover:bg-slate-50 hover:border-slate-300 active:scale-95; }
+  .btn-dark      { @apply btn-base bg-[#0B132B] text-white hover:bg-[#16223F] active:scale-95; }
+  .btn-light     { @apply btn-base bg-slate-100 text-slate-800 hover:bg-slate-200 active:scale-95; }
+  .btn-danger    { @apply btn-base bg-red-600   text-white hover:bg-red-700 active:scale-95; }
 
   /* Tables */
   .table-base { @apply w-full text-sm; }
@@ -366,6 +370,15 @@ body {
 /* ─────────────────────────────────────────────────────────────
    ACCESSIBILITY
 ──────────────────────────────────────────────────────────────*/
+/* Visible keyboard focus (only shows on keyboard navigation, not mouse clicks) */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid rgba(6, 182, 212, 0.65);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

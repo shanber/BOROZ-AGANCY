@@ -13,7 +13,7 @@ export default withAuth(
     // Redirect from root /dashboard
     if (path === '/dashboard') {
       if (token.globalRole === 'ADMIN') {
-        return NextResponse.redirect(new URL('/dashboard/admin/providers', req.url));
+        return NextResponse.redirect(new URL('/dashboard/admin', req.url));
       } else if (token.globalRole === 'PROVIDER') {
         if (token.approvalStatus === 'APPROVED') {
           return NextResponse.redirect(new URL('/dashboard/provider', req.url));

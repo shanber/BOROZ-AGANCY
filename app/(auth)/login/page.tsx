@@ -31,17 +31,17 @@ export default function LoginPage() {
       if (res?.error) {
         setIsLoading(false);
         if (res.error === 'Configuration' || res.error === 'AccessDenied') {
-          setError('❌ حدث خطأ في تسجيل الدخول، تحقق من إعدادات الخادم');
+          setError('حدث خطأ في تسجيل الدخول، تحقق من إعدادات الخادم');
         } else if (res.error.includes('كلمة المرور') || res.error.includes('البريد')) {
-          setError(`❌ البريد الإلكتروني أو كلمة المرور غير صحيحة`);
+          setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
         } else {
-          setError(`❌ ${res.error}`);
+          setError(res.error);
         }
         return;
       }
 
       // Success
-      setSuccess('✅ تم تسجيل الدخول بنجاح!');
+      setSuccess('تم تسجيل الدخول بنجاح!');
       setIsLoading(false);
       
       // Redirect after short delay
@@ -52,7 +52,7 @@ export default function LoginPage() {
 
     } catch (err: any) {
       setIsLoading(false);
-      setError('❌ حدث خطأ أثناء تسجيل الدخول');
+      setError('حدث خطأ أثناء تسجيل الدخول');
     }
   };
 
@@ -137,12 +137,7 @@ export default function LoginPage() {
 
             {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between">
-              <Link
-                href="/forgot-password"
-                className="text-sm text-[#06B6D4] hover:underline"
-              >
-                نسيت كلمة المرور؟
-              </Link>
+              <span className="text-sm text-slate-400">نسيت كلمة المرور؟ تواصل مع الدعم</span>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" className="w-4 h-4 rounded border-slate-300" />
                 <span className="text-sm text-slate-600">تذكرني</span>

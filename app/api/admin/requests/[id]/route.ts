@@ -14,6 +14,19 @@ const allowedActions: ReviewAction[] = [
   'REJECTED',
 ];
 
+// Server-side state machine — source of truth for review transitions.
+// Mirrors the status-aware action buttons in the admin UI.
+// 'جديد' is a legacy Arabic value equivalent to SUBMITTED.
+const allowedTransitions: Record<string, ReviewAction[]> = {
+  SUBMITTED: ['UNDER_REVIEW', 'REJECTED'],
+  جديد: ['UNDER_REVIEW', 'REJECTED'],
+  UNDER_REVIEW: ['APPROVED_FOR_OFFERS', 'NEEDS_CHANGES', 'REJECTED'],
+  NEEDS_CHANGES: ['UNDER_REVIEW', 'REJECTED'],
+  APPROVED_FOR_OFFERS: [],
+  REJECTED: [],
+  CANCELLED: [],
+};
+
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
@@ -46,6 +59,16 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
     if (!order) {
       return NextResponse.json({ error: 'لم يتم العثور على الطلب' }, { status: 404 });
+    }
+
+    // Enforce the state machine server-side (UI buttons are not enough).
+    const currentStatus = order.status || 'SUBMITTED';
+    const permittedActions = allowedTransitions[currentStatus] ?? [];
+    if (!permittedActions.includes(action)) {
+      return NextResponse.json(
+        { error: 'لا يمكن تنفيذ هذا الإجراء على الحالة الحالية للطلب' },
+        { status: 409 }
+      );
     }
 
     const updatedOrder = await prisma.order.update({

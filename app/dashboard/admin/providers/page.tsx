@@ -13,6 +13,7 @@ export default async function AdminProvidersPage() {
   }
 
   const providers = await prisma.expertProfile.findMany({
+    take: 50,
     include: {
       user: true,
       services: true,
@@ -21,6 +22,8 @@ export default async function AdminProvidersPage() {
       createdAt: 'desc',
     },
   });
+
+  const totalCount = await prisma.expertProfile.count();
 
   return (
     <div className="space-y-6">
@@ -35,7 +38,7 @@ export default async function AdminProvidersPage() {
       </div>
 
       {/* Client Component for filtering and displaying the table */}
-      <ProvidersListClient initialProviders={providers} />
+      <ProvidersListClient initialProviders={providers} totalCount={totalCount} />
     </div>
   );
 }

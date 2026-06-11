@@ -6,16 +6,29 @@ import prisma from '@/app/lib/prisma';
 import { authOptions } from '@/app/lib/auth';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { services } from '@/app/lib/demo-data';
+import { resolveServiceLabel } from '@/app/lib/services';
 import { formatCurrency, formatShortDate } from '@/app/lib/formatters';
-import { getOrderStatusLabel, getOrderStatusStyle, orderReviewStatuses } from '@/app/lib/order-status';
+import { getOrderStatusLabel, getOrderStatusStyle } from '@/app/lib/order-status';
 import { merchantOrderOwnershipFilter } from '@/app/lib/order-access';
 import { getCached } from '@/app/lib/server-cache';
 
 const pageSize = 20;
+const merchantOrderStatuses = [
+  'SUBMITTED',
+  'UNDER_REVIEW',
+  'NEEDS_CHANGES',
+  'APPROVED_FOR_OFFERS',
+  'COLLECTING_OFFERS',
+  'OFFER_SELECTED',
+  'IN_EXECUTION',
+  'DELIVERED',
+  'COMPLETED',
+  'REJECTED',
+  'CANCELLED',
+] as const;
 
 function serviceLabel(serviceType: string) {
-  return services.find((service) => service.key === serviceType)?.label || serviceType || 'خدمة أخرى';
+  return resolveServiceLabel(serviceType);
 }
 
 function buildSearchParams(params: Record<string, string | number | undefined>) {
@@ -35,6 +48,9 @@ export default async function OrdersPage({
   if (!session?.user?.id) {
     redirect('/login');
   }
+  if (session.user.globalRole !== 'MERCHANT') {
+    redirect('/dashboard');
+  }
 
   const ownerFilter = merchantOrderOwnershipFilter(session);
 
@@ -43,7 +59,7 @@ export default async function OrdersPage({
   const page = Math.max(Number(searchParams?.page || '1'), 1);
 
   const filters: any[] = [ownerFilter];
-  if (status && orderReviewStatuses.includes(status as any)) filters.push({ status });
+  if (status) filters.push({ status });
   if (search) {
     filters.push({
       OR: [
@@ -69,6 +85,11 @@ export default async function OrdersPage({
           budget: true,
           priority: true,
           status: true,
+          project: {
+            select: {
+              id: true,
+            },
+          },
           createdAt: true,
           updatedAt: true,
         },
@@ -77,7 +98,7 @@ export default async function OrdersPage({
 
   const statusOptions = [
     { value: '', label: 'كل الحالات' },
-    ...orderReviewStatuses.map((item) => ({ value: item, label: getOrderStatusLabel(item) })),
+    ...merchantOrderStatuses.map((item) => ({ value: item, label: getOrderStatusLabel(item) })),
   ];
 
   return (
@@ -145,11 +166,14 @@ export default async function OrdersPage({
               <tbody className="divide-y divide-slate-100">
                 {orders.map((order) => {
                   const statusLabel = getOrderStatusLabel(order.status);
+                  const hasOffersFlow = ['APPROVED_FOR_OFFERS', 'COLLECTING_OFFERS', 'OFFER_SELECTED'].includes(order.status);
+                  const projectId = order.project?.id || null;
+                  const hasProject = Boolean(projectId);
                   return (
                     <tr key={order.orderNumber} className="transition-colors hover:bg-slate-50/50">
                       <td className="px-6 py-4 font-bold text-[#111827]">{order.orderNumber}</td>
                       <td className="px-6 py-4 font-semibold text-slate-700">{order.storeName}</td>
-                      <td className="px-6 py-4 text-slate-650">{serviceLabel(order.serviceType)}</td>
+                      <td className="px-6 py-4 text-slate-500">{serviceLabel(order.serviceType)}</td>
                       <td className="px-6 py-4 text-center">
                         <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold ${getOrderStatusStyle(order.status)}`}>
                           {statusLabel}
@@ -165,12 +189,28 @@ export default async function OrdersPage({
                         {order.budget ? formatCurrency(order.budget) : 'قيد التقدير'}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <Link href={`/dashboard/orders/${order.orderNumber}`}>
-                          <button className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] font-bold text-slate-650 transition-all hover:bg-slate-100 hover:text-[#111827]">
-                            <Eye size={12} />
-                            تفاصيل
-                          </button>
-                        </Link>
+                        <div className="flex items-center justify-center gap-2">
+                          <Link href={`/dashboard/orders/${order.orderNumber}`}>
+                            <button className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] font-bold text-slate-500 transition-all hover:bg-slate-100 hover:text-[#111827]">
+                              <Eye size={12} />
+                              تفاصيل
+                            </button>
+                          </Link>
+                          {hasOffersFlow ? (
+                            <Link href={`/dashboard/offers/${order.orderNumber}`}>
+                              <button className="inline-flex items-center gap-1 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-[10px] font-bold text-cyan-700 transition-all hover:bg-cyan-100">
+                                العروض
+                              </button>
+                            </Link>
+                          ) : null}
+                          {hasProject ? (
+                            <Link href={`/dashboard/projects/${projectId}`}>
+                              <button className="inline-flex items-center gap-1 rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-[10px] font-bold text-violet-700 transition-all hover:bg-violet-100">
+                                المشروع
+                              </button>
+                            </Link>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   );

@@ -33,22 +33,22 @@ export default function RegisterPage() {
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
-      setError('❌ كلمات المرور غير متطابقة');
+      setError('كلمات المرور غير متطابقة');
       return;
     }
 
     if (formData.email.length < 5) {
-      setError('❌ البريد الإلكتروني غير صحيح');
+      setError('البريد الإلكتروني غير صحيح');
       return;
     }
 
     if (formData.phone.length < 10) {
-      setError('❌ رقم الجوال غير صحيح');
+      setError('رقم الجوال غير صحيح');
       return;
     }
 
     if (formData.password.length < 8) {
-      setError('❌ كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+      setError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
       return;
     }
 
@@ -62,6 +62,7 @@ export default function RegisterPage() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
+          phone: formData.phone,
           storeName: formData.storeName,
           storeUrl: formData.storeUrl,
         }),
@@ -73,7 +74,7 @@ export default function RegisterPage() {
         throw new Error(data.error || 'حدث خطأ غير متوقع');
       }
 
-      setSuccess('✅ تم إنشاء الحساب بنجاح! جاري التوجيه...');
+      setSuccess('تم إنشاء الحساب بنجاح! جاري التوجيه...');
       
       // Redirect after short delay to login
       setTimeout(() => {
@@ -81,7 +82,7 @@ export default function RegisterPage() {
       }, 1500);
 
     } catch (err: any) {
-      setError('❌ ' + err.message);
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }

@@ -13,14 +13,17 @@ import {
 } from 'lucide-react';
 import prisma from '@/app/lib/prisma';
 import { authOptions } from '@/app/lib/auth';
-import { services } from '@/app/lib/demo-data';
+import { resolveServiceLabel } from '@/app/lib/services';
 import { formatCurrency, formatShortDate } from '@/app/lib/formatters';
 import { getOrderStatusLabel, getOrderStatusStyle } from '@/app/lib/order-status';
+import { getOrderMatchingServiceSlugs, getProviderDisplayName } from '@/app/lib/provider-opportunities';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import RequestReviewActions from './RequestReviewActions';
+import InviteProvidersPanel from './InviteProvidersPanel';
+import CreateProjectFromOfferButton from './CreateProjectFromOfferButton';
 
 function serviceLabel(serviceType: string) {
-  return services.find((service) => service.key === serviceType)?.label || serviceType || 'خدمة أخرى';
+  return resolveServiceLabel(serviceType);
 }
 
 export default async function AdminRequestDetailPage({ params }: { params: { id: string } }) {
@@ -43,13 +46,27 @@ export default async function AdminRequestDetailPage({ params }: { params: { id:
       email: true,
       sallaUrl: true,
       serviceType: true,
+      serviceId: true,
       budget: true,
       priority: true,
       status: true,
+      selectedOfferId: true,
       description: true,
       notes: true,
       adminNote: true,
       internalNote: true,
+      project: {
+        select: {
+          id: true,
+          status: true,
+        },
+      },
+      selectedOffer: {
+        select: {
+          id: true,
+          status: true,
+        },
+      },
       reviewedAt: true,
       reviewedById: true,
       createdAt: true,
@@ -70,6 +87,129 @@ export default async function AdminRequestDetailPage({ params }: { params: { id:
 
   const statusLabel = getOrderStatusLabel(order.status);
   const reviewerName = order.reviewedAt ? reviewer?.name || 'مسؤول بروز' : 'لم تتم المراجعة بعد';
+  const matchingServiceSlugs = getOrderMatchingServiceSlugs(order.serviceType);
+
+  const [matchingProviders, invitations] = await Promise.all([
+    prisma.expertProfile.findMany({
+      where: {
+        approvalStatus: 'APPROVED',
+        services: matchingServiceSlugs.length
+          ? {
+              some: {
+                isActive: true,
+                service: {
+                  slug: { in: matchingServiceSlugs },
+                },
+              },
+            }
+          : undefined,
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+        services: {
+          where: matchingServiceSlugs.length
+            ? {
+                isActive: true,
+                service: {
+                  slug: { in: matchingServiceSlugs },
+                },
+              }
+            : { isActive: true },
+          include: {
+            service: {
+              select: {
+                nameAr: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    }),
+    prisma.offerInvitation.findMany({
+      where: { orderId: order.id },
+      include: {
+        expertProfile: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+            services: {
+              where: matchingServiceSlugs.length
+                ? {
+                    isActive: true,
+                    service: {
+                      slug: { in: matchingServiceSlugs },
+                    },
+                  }
+                : { isActive: true },
+              include: {
+                service: {
+                  select: {
+                    nameAr: true,
+                  },
+                },
+              },
+            },
+            offers: {
+              where: { orderId: order.id },
+              select: {
+                price: true,
+                deliveryDays: true,
+                status: true,
+                submittedAt: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { invitedAt: 'desc' },
+    }),
+  ]);
+
+  const invitationMap = new Map(invitations.map((invitation) => [invitation.expertProfileId, invitation]));
+  const mergedProviders = new Map(matchingProviders.map((provider) => [provider.id, provider]));
+
+  invitations.forEach((invitation) => {
+    if (!mergedProviders.has(invitation.expertProfile.id)) {
+      mergedProviders.set(invitation.expertProfile.id, invitation.expertProfile);
+    }
+  });
+
+  const providerInvitationRows = Array.from(mergedProviders.values()).map((provider) => {
+    const invitation = invitationMap.get(provider.id);
+    const offer = invitation?.expertProfile.offers[0] || null;
+
+    return {
+      id: provider.id,
+      name: getProviderDisplayName(provider),
+      email: provider.user.email || 'غير متوفر',
+      specialtyTitle: provider.specialtyTitle || '',
+      services: provider.services.map((service) => service.service.nameAr),
+      alreadyInvited: Boolean(invitation),
+      invitationStatus: invitation ? invitation.status : null,
+      invitedAt: invitation ? formatShortDate(invitation.invitedAt).replace(/-/g, '/') : null,
+      expiresAt: invitation?.expiresAt ? formatShortDate(invitation.expiresAt).replace(/-/g, '/') : null,
+      offer: offer
+        ? {
+            price: offer.price,
+            deliveryDays: offer.deliveryDays,
+            status: offer.status,
+            submittedAt: offer.submittedAt ? formatShortDate(offer.submittedAt).replace(/-/g, '/') : null,
+          }
+        : null,
+    };
+  });
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 animate-fade-in">
@@ -150,8 +290,15 @@ export default async function AdminRequestDetailPage({ params }: { params: { id:
           <RequestReviewActions
             orderNumber={order.orderNumber}
             currentStatus={statusLabel}
+            currentStatusKey={order.status as any}
             initialAdminNote={order.adminNote}
             initialInternalNote={order.internalNote}
+          />
+
+          <InviteProvidersPanel
+            orderNumber={order.orderNumber}
+            requestStatus={order.status}
+            providers={providerInvitationRows}
           />
 
           <Card className="border border-slate-200/80 shadow-sm">
@@ -166,6 +313,31 @@ export default async function AdminRequestDetailPage({ params }: { params: { id:
               />
               {order.adminNote && <InfoBlock label="ملاحظة للتاجر" value={order.adminNote} />}
               {order.internalNote && <InfoBlock label="ملاحظة داخلية" value={order.internalNote} />}
+              {!order.project && order.selectedOfferId && order.selectedOffer?.status === 'ACCEPTED' ? (
+                <div className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3">
+                  <span className="mb-1 block text-[10px] font-bold text-violet-700">مرحلة التنفيذ</span>
+                  <p className="text-xs leading-relaxed text-violet-900">
+                    تم اختيار العرض، لكن لم يتم إنشاء مشروع بعد.
+                  </p>
+                  <div className="mt-3">
+                    <CreateProjectFromOfferButton orderNumber={order.orderNumber} />
+                  </div>
+                </div>
+              ) : null}
+              {order.project ? (
+                <div className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3">
+                  <span className="mb-1 block text-[10px] font-bold text-violet-700">مرحلة التنفيذ</span>
+                  <p className="text-xs leading-relaxed text-violet-900">
+                    تم إنشاء مشروع لهذا الطلب ويمكن متابعة kickoff من صفحة المشاريع.
+                  </p>
+                  <Link
+                    href={`/dashboard/projects/${order.project.id}`}
+                    className="mt-3 inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-white px-3 py-1.5 text-[10px] font-bold text-violet-800 transition-colors hover:bg-violet-100"
+                  >
+                    فتح المشروع
+                  </Link>
+                </div>
+              ) : null}
             </CardBody>
           </Card>
         </div>

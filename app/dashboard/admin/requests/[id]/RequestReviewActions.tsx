@@ -5,15 +5,24 @@ import { useRouter } from 'next/navigation';
 import { CheckCircle2, Clock, Loader2, type LucideIcon, RotateCcw, XCircle } from 'lucide-react';
 
 type ReviewAction = 'UNDER_REVIEW' | 'APPROVED_FOR_OFFERS' | 'NEEDS_CHANGES' | 'REJECTED';
+type OrderStatusKey =
+  | 'SUBMITTED'
+  | 'جديد'            // legacy Arabic value — treated as SUBMITTED
+  | 'UNDER_REVIEW'
+  | 'NEEDS_CHANGES'
+  | 'APPROVED_FOR_OFFERS'
+  | 'REJECTED'
+  | 'CANCELLED';
 
 interface RequestReviewActionsProps {
   orderNumber: string;
-  currentStatus: string;
+  currentStatus: string;       // Arabic label — displayed only
+  currentStatusKey: OrderStatusKey;
   initialAdminNote?: string | null;
   initialInternalNote?: string | null;
 }
 
-const actions: Array<{
+const allActions: Array<{
   action: ReviewAction;
   label: string;
   icon: LucideIcon;
@@ -45,9 +54,21 @@ const actions: Array<{
   },
 ];
 
+// Which actions are available per current status key
+const allowedActionsMap: Record<OrderStatusKey, ReviewAction[]> = {
+  SUBMITTED:           ['UNDER_REVIEW', 'REJECTED'],
+  جديد:               ['UNDER_REVIEW', 'REJECTED'], // legacy Arabic — same as SUBMITTED
+  UNDER_REVIEW:        ['APPROVED_FOR_OFFERS', 'NEEDS_CHANGES', 'REJECTED'],
+  NEEDS_CHANGES:       ['UNDER_REVIEW', 'REJECTED'],
+  APPROVED_FOR_OFFERS: [],
+  REJECTED:            [],
+  CANCELLED:           [],
+};
+
 export default function RequestReviewActions({
   orderNumber,
   currentStatus,
+  currentStatusKey,
   initialAdminNote = '',
   initialInternalNote = '',
 }: RequestReviewActionsProps) {
@@ -56,6 +77,10 @@ export default function RequestReviewActions({
   const [internalNote, setInternalNote] = React.useState(initialInternalNote || '');
   const [loadingAction, setLoadingAction] = React.useState<ReviewAction | null>(null);
   const [error, setError] = React.useState('');
+
+  const visibleActions = allActions.filter((item) =>
+    (allowedActionsMap[currentStatusKey] ?? []).includes(item.action)
+  );
 
   const handleAction = async (action: ReviewAction) => {
     if ((action === 'NEEDS_CHANGES' || action === 'REJECTED') && !adminNote.trim()) {
@@ -127,24 +152,34 @@ export default function RequestReviewActions({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3">
-        {actions.map((item) => {
-          const Icon = item.icon;
-          const isLoading = loadingAction === item.action;
-          return (
-            <button
-              key={item.action}
-              type="button"
-              onClick={() => handleAction(item.action)}
-              disabled={Boolean(loadingAction)}
-              className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${item.className}`}
-            >
-              {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Icon size={16} />}
-              {item.label}
-            </button>
-          );
-        })}
-      </div>
+      {visibleActions.length === 0 ? (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500 text-center">
+          {currentStatusKey === 'APPROVED_FOR_OFFERS'
+            ? 'تم اعتماد هذا الطلب للعروض ولا توجد إجراءات مراجعة متاحة حالياً.'
+            : currentStatusKey === 'REJECTED'
+            ? 'تم رفض هذا الطلب ولا توجد إجراءات مراجعة متاحة.'
+            : 'لا توجد إجراءات متاحة لهذه الحالة.'}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3">
+          {visibleActions.map((item) => {
+            const Icon = item.icon;
+            const isLoading = loadingAction === item.action;
+            return (
+              <button
+                key={item.action}
+                type="button"
+                onClick={() => handleAction(item.action)}
+                disabled={Boolean(loadingAction)}
+                className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${item.className}`}
+              >
+                {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Icon size={16} />}
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

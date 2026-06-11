@@ -12,25 +12,20 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC] text-[#111827] overflow-x-hidden relative">
-      {/* Sidebar Overlay for Mobile */}
+    <div className="flex min-h-screen bg-[#F8FAFC] overflow-x-hidden relative">
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/40 z-40 md:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-slate-900/20 z-40 md:hidden transition-opacity duration-300"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar - fixed width 260px */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Main content wrapper */}
       <div className="flex-1 flex flex-col min-w-0 md:pr-[260px] transition-all duration-300 min-h-screen">
-        {/* Topbar */}
         <Topbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
-        {/* Content */}
-        <main className="flex-1 pt-3 pb-6 px-4 md:pt-5 md:pb-8 md:px-8 overflow-y-auto">
+        <main className="flex-1 pb-8 px-4 md:px-8 pt-6 overflow-y-auto">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

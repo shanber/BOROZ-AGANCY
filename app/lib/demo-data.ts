@@ -16,6 +16,8 @@ export interface Order {
   notes?: string;
   adminNote?: string;
   createdAt?: string | Date;
+  projectId?: string;
+  projectStatus?: string;
 }
 
 export interface Project {

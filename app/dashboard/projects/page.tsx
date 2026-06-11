@@ -1,225 +1,146 @@
-'use client';
-
-import React, { useState } from 'react';
 import Link from 'next/link';
-import { Card, CardBody, CardHeader } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Plus, Search, Calendar, DollarSign, BarChart3 } from 'lucide-react';
-import { projects, Project } from '@/app/lib/demo-data';
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { FolderOpen, ArrowRight } from 'lucide-react';
+import prisma from '@/app/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { getProjectStatusLabel, getProjectStatusStyle } from '@/app/lib/project-utils';
+import { getProviderDisplayName } from '@/app/lib/provider-opportunities';
+import { resolveServiceLabel } from '@/app/lib/services';
 
-export default function ProjectsPage() {
-  const [activeFilter, setActiveFilter] = useState<string>('الكل');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+export default async function ProjectsPage() {
+  const session = await getServerSession(authOptions);
 
-  const filterTabs = [
-    { label: 'الكل', count: projects.length },
-    { label: 'نشط', count: projects.filter(p => p.status === 'نشط').length },
-    { label: 'متأخر', count: projects.filter(p => p.status === 'متأخر').length },
-    { label: 'بانتظار العميل', count: projects.filter(p => p.status === 'بانتظار العميل').length },
-    { label: 'مكتمل', count: projects.filter(p => p.status === 'مكتمل').length },
-  ];
+  if (!session?.user?.id) {
+    redirect('/login');
+  }
 
-  // Filter and Search logic
-  const filteredProjects = projects.filter((project) => {
-    const matchesFilter = activeFilter === 'الكل' || project.status === activeFilter;
-    const matchesSearch = 
-      project.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      project.client.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+  const where =
+    session.user.globalRole === 'ADMIN'
+      ? {}
+      : session.user.globalRole === 'PROVIDER'
+      ? {
+          acceptedOffer: {
+            expertProfile: {
+              userId: session.user.id,
+            },
+          },
+        }
+      : {
+          order: {
+            userId: session.user.id,
+          },
+        };
+
+  const projects = await prisma.project.findMany({
+    where,
+    orderBy: [{ createdAt: 'desc' }],
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      price: true,
+      deliveryDays: true,
+      createdAt: true,
+      dueDate: true,
+      order: {
+        select: {
+          orderNumber: true,
+          storeName: true,
+          managerName: true,
+          serviceType: true,
+        },
+      },
+      acceptedOffer: {
+        select: {
+          expertProfile: {
+            select: {
+              specialtyTitle: true,
+              user: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   });
 
-  const getStatusStyle = (status: Project['status']) => {
-    switch (status) {
-      case 'مكتمل':
-        return 'text-blue-600 bg-blue-50 border-blue-100';
-      case 'نشط':
-        return 'text-emerald-600 bg-emerald-50 border-emerald-100';
-      case 'بانتظار العميل':
-        return 'text-amber-600 bg-amber-50 border-amber-100';
-      case 'متأخر':
-        return 'text-red-600 bg-red-50 border-red-100';
-      default:
-        return 'text-slate-600 bg-slate-50 border-slate-100';
-    }
-  };
+  const roleLabel =
+    session.user.globalRole === 'ADMIN'
+      ? 'لوحة تحكم الإدارة'
+      : session.user.globalRole === 'PROVIDER'
+      ? 'لوحة مقدم الخدمة'
+      : 'لوحة تحكم التاجر';
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md mb-6">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div className="ml-3 rtl:mr-3 rtl:ml-0">
-            <p className="text-sm text-yellow-700 font-bold">
-              ملاحظة: البيانات المعروضة في هذه الصفحة هي بيانات تجريبية (Placeholder) وليست حقيقية. سيتم ربطها بقاعدة البيانات في المرحلة القادمة.
-            </p>
-          </div>
-        </div>
+      <div className="flex flex-col gap-2 border-b border-slate-200/60 pb-5">
+        <p className="text-xs font-semibold uppercase tracking-wide text-[#06B6D4]">{roleLabel}</p>
+        <h1 className="text-2xl font-bold text-[#111827]">المشاريع</h1>
+        <p className="max-w-3xl text-sm leading-relaxed text-slate-500">
+          هذه المشاريع ناتجة من العروض المقبولة داخل بروز، وتوضح مرحلة تجهيز التنفيذ أو انطلاقه تحت إشراف بروز.
+        </p>
       </div>
-      {/* Header section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 pb-5">
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold text-[#111827] font-sans">المشاريع</h2>
-          <p className="text-xs md:text-sm text-[#64748B] mt-1 font-sans">
-            متابعة مشاريع العملاء ومراحل التنفيذ ونسب الإنجاز.
+
+      {projects.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cyan-50 text-[#06B6D4]">
+            <FolderOpen size={30} />
+          </div>
+          <h2 className="text-lg font-bold text-[#111827]">لا توجد مشاريع بعد</h2>
+          <p className="mt-2 text-sm leading-7 text-slate-500">
+            سيظهر المشروع هنا بعد قبول عرض والانتقال إلى مرحلة تجهيز التنفيذ.
           </p>
         </div>
-        <Link href="/dashboard/projects/new">
-          <Button className="bg-[#06B6D4] hover:bg-[#0891B2] text-white text-xs font-bold shadow-sm shadow-[#06B6D4]/10 flex items-center gap-1.5 px-4 py-2.5 rounded-xl">
-            <Plus size={16} />
-            مشروع جديد
-          </Button>
-        </Link>
-      </div>
-
-      {/* Filters and Search Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        {/* Filter Tabs */}
-        <div className="flex flex-wrap gap-1.5 p-1 bg-slate-100 rounded-xl max-w-max">
-          {filterTabs.map((tab) => {
-            const isActive = activeFilter === tab.label;
-            return (
-              <button
-                key={tab.label}
-                onClick={() => setActiveFilter(tab.label)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${isActive ? 'bg-white text-[#111827] shadow-sm' : 'text-slate-600 hover:text-[#111827]'}`}
-              >
-                <span className="font-sans">{tab.label}</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold ${isActive ? 'bg-[#06B6D4] text-white' : 'bg-slate-200 text-slate-600'}`}>
-                  {tab.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Search Input */}
-        <div className="w-full lg:w-72">
-          <Input
-            placeholder="ابحث باسم المشروع أو العميل..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            icon={<Search size={16} className="text-slate-400" />}
-            className="bg-white border-slate-200"
-          />
-        </div>
-      </div>
-
-      {/* Conditional Content */}
-      {filteredProjects.length === 0 ? (
-        <Card className="border border-slate-200/80 shadow-sm">
-          <CardBody className="p-12 text-center text-slate-500 space-y-2">
-            <p className="text-sm font-sans">لا توجد مشاريع تطابق خيارات الفلترة أو البحث الحالية.</p>
-            <button 
-              onClick={() => { setActiveFilter('الكل'); setSearchQuery(''); }}
-              className="text-xs text-[#06B6D4] font-bold hover:underline font-sans"
-            >
-              إعادة ضبط الفلاتر
-            </button>
-          </CardBody>
-        </Card>
       ) : (
-        <>
-          {/* Projects Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((project, idx) => (
-              <Card key={idx} className="border border-slate-200/80 hover:shadow-md transition-shadow">
-                <CardBody className="p-5 space-y-4">
-                  {/* Title & Tag */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <h3 className="font-bold text-xs text-[#111827] font-sans line-clamp-2 leading-relaxed min-h-[36px]">
-                        {project.name}
-                      </h3>
-                      <span className="text-[10px] text-[#64748B] font-bold font-sans block">{project.client}</span>
-                    </div>
-                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold font-sans border shrink-0 ${getStatusStyle(project.status)}`}>
-                      {project.status}
-                    </span>
-                  </div>
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          {projects.map((project) => (
+            <div key={project.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-xs font-bold text-[#06B6D4]">{project.order.orderNumber}</div>
+                  <h2 className="mt-2 text-lg font-bold text-[#111827]">{project.name}</h2>
+                  <p className="mt-1 text-sm text-slate-500">{resolveServiceLabel(project.order.serviceType)}</p>
+                </div>
+                <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${getProjectStatusStyle(project.status)}`}>
+                  {getProjectStatusLabel(project.status)}
+                </span>
+              </div>
 
-                  {/* Progress bar */}
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-center text-[10px] font-bold font-sans">
-                      <span className="text-slate-500">نسبة الإنجاز</span>
-                      <span className="text-[#06B6D4]">{project.progress}%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                      <div 
-                        className="bg-[#06B6D4] h-1.5 rounded-full transition-all duration-500" 
-                        style={{ width: `${project.progress}%` }}
-                      />
-                    </div>
-                  </div>
+              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm text-slate-600">
+                <InfoPill label={session.user.globalRole === 'PROVIDER' ? 'التاجر' : 'الخبير'} value={session.user.globalRole === 'PROVIDER' ? project.order.storeName : project.acceptedOffer?.expertProfile ? getProviderDisplayName(project.acceptedOffer.expertProfile) : 'خبير بروز'} />
+                <InfoPill label="السعر" value={project.price ? `${project.price} ر.س` : 'غير محدد'} />
+                <InfoPill label="مدة التنفيذ" value={project.deliveryDays ? `${project.deliveryDays} يوم` : 'غير محددة'} />
+                <InfoPill label="تاريخ الإنشاء" value={project.createdAt.toLocaleDateString('en-GB')} />
+                <InfoPill label="تاريخ الاستحقاق" value={project.dueDate ? project.dueDate.toLocaleDateString('en-GB') : 'غير محدد'} />
+                <InfoPill label="المتجر" value={project.order.storeName} />
+              </div>
 
-                  <hr className="border-slate-100" />
-
-                  {/* Meta: Budget & Date */}
-                  <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 font-sans">
-                    <div className="flex items-center gap-1">
-                      <Calendar size={13} className="text-slate-450" />
-                      <span>{project.date}</span>
-                    </div>
-                    <div className="flex items-center gap-1 font-sans">
-                      <DollarSign size={13} className="text-emerald-600" />
-                      <span className="text-slate-700 font-sans">{project.budget}</span>
-                    </div>
-                  </div>
-                </CardBody>
-              </Card>
-            ))}
-          </div>
-
-          {/* Projects List Table */}
-          <Card className="border border-slate-200/80 shadow-sm overflow-hidden">
-            <CardHeader className="bg-slate-50/50 border-b border-slate-200/60 px-6 py-4 flex items-center gap-2">
-              <BarChart3 size={16} className="text-[#06B6D4]" />
-              <h3 className="font-bold text-sm text-[#111827] font-sans">جدول المشاريع التفصيلي</h3>
-            </CardHeader>
-            <div className="w-full overflow-x-auto">
-              <table className="w-full text-right border-collapse text-xs whitespace-nowrap min-w-[700px]">
-                <thead>
-                  <tr className="bg-slate-50/80 text-slate-500 border-b border-slate-200/80">
-                    <th className="px-6 py-3.5 font-bold font-sans">اسم المشروع</th>
-                    <th className="px-6 py-3.5 font-bold font-sans">العميل</th>
-                    <th className="px-6 py-3.5 font-bold font-sans text-center">نسبة الإنجاز</th>
-                    <th className="px-6 py-3.5 font-bold font-sans">تاريخ البدء</th>
-                    <th className="px-6 py-3.5 font-bold font-sans text-left">الميزانية</th>
-                    <th className="px-6 py-3.5 font-bold font-sans text-center">الحالة</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredProjects.map((project, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-4 font-bold text-slate-800 font-sans">{project.name}</td>
-                      <td className="px-6 py-4 font-semibold text-slate-650 font-sans">{project.client}</td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-2 max-w-[120px] mx-auto">
-                          <div className="w-16 bg-slate-150 h-1 rounded-full overflow-hidden">
-                            <div className="bg-[#06B6D4] h-1 rounded-full" style={{ width: `${project.progress}%` }} />
-                          </div>
-                          <span className="font-bold font-sans text-[10px] text-slate-700">{project.progress}%</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-slate-500 font-sans">{project.date}</td>
-                      <td className="px-6 py-4 text-left font-bold text-slate-800 font-sans">{project.budget}</td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold font-sans border ${getStatusStyle(project.status)}`}>
-                          {project.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="mt-5 text-left">
+                <Link
+                  href={`/dashboard/projects/${project.id}`}
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#06B6D4] px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#0891B2]"
+                >
+                  <ArrowRight size={14} />
+                  عرض المشروع
+                </Link>
+              </div>
             </div>
-          </Card>
-        </>
+          ))}
+        </div>
       )}
+    </div>
+  );
+}
+
+function InfoPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+      <div className="text-[11px] font-bold text-slate-500">{label}</div>
+      <div className="mt-1 text-sm font-semibold text-slate-800">{value}</div>
     </div>
   );
 }

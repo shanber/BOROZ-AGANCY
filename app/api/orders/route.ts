@@ -1,12 +1,13 @@
 ﻿import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { services } from '@/app/lib/demo-data';
+import { resolveServiceLabel } from '@/app/lib/services';
 import { authOptions } from '@/app/lib/auth';
 import prisma from '@/app/lib/prisma';
 import { formatShortDate, formatCurrency } from '@/app/lib/formatters';
 import { getOrderStatusLabel } from '@/app/lib/order-status';
 import { merchantOrderOwnershipFilter } from '@/app/lib/order-access';
 import { clearCachePrefix, getCached } from '@/app/lib/server-cache';
+import { getOrderMatchingServiceSlugs } from '@/app/lib/provider-opportunities';
 
 type MerchantContext = {
   userId: string;
@@ -24,7 +25,7 @@ function formatDate(date: Date) {
 }
 
 function serviceLabel(serviceType: string) {
-  return services.find((service) => service.key === serviceType)?.label || serviceType || 'خدمة أخرى';
+  return resolveServiceLabel(serviceType);
 }
 
 function mapOrder(dbOrder: any) {
@@ -143,6 +144,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    if (session.user.globalRole !== 'MERCHANT') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
 
     if (searchParams.get('context') === 'merchant') {
@@ -235,6 +240,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.globalRole !== 'MERCHANT') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const context = await getMerchantContext();
 
     if (!context) {
@@ -260,6 +270,17 @@ export async function POST(request: Request) {
     }
 
     const orderNumber = `ORD-${Date.now()}`;
+    const matchingServiceSlugs = getOrderMatchingServiceSlugs(String(serviceType).trim());
+    const canonicalService = matchingServiceSlugs.length
+      ? await prisma.service.findFirst({
+          where: {
+            slug: { in: matchingServiceSlugs },
+            isActive: true,
+          },
+          orderBy: { sortOrder: 'asc' },
+          select: { id: true },
+        })
+      : null;
     const extraNotes = [notes, referenceLinks ? `روابط مرجعية: ${referenceLinks}` : null]
       .map((value) => (value ? String(value).trim() : ''))
       .filter(Boolean)
@@ -277,6 +298,7 @@ export async function POST(request: Request) {
         email: context.email,
         sallaUrl: context.storeUrl || null,
         serviceType: String(serviceType).trim(),
+        serviceId: canonicalService?.id || null,
         budget: budget ? String(budget) : null,
         priority: priority || 'عادي',
         description: String(description).trim(),

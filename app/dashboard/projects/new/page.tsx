@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
@@ -10,6 +11,8 @@ import { ArrowRight, CheckCircle2, FolderOpen } from 'lucide-react';
 
 export default function NewProjectPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
+  const globalRole = session?.user?.globalRole;
   
   // Form state
   const [projectName, setProjectName] = useState('');
@@ -23,6 +26,17 @@ export default function NewProjectPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Guard: redirect non-admin/provider
+  React.useEffect(() => {
+    if (status === 'loading') return;
+    if (globalRole && globalRole !== 'ADMIN' && globalRole !== 'PROVIDER') {
+      router.replace('/dashboard/projects');
+    }
+  }, [globalRole, status, router]);
+
+  if (status === 'loading') return null;
+  if (globalRole && globalRole !== 'ADMIN' && globalRole !== 'PROVIDER') return null;
 
   const validate = () => {
     const newErrors: Record<string, string> = {};

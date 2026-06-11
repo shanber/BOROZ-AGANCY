@@ -1,28 +1,11 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/app/lib/prisma';
+import { getRequestableServices } from '@/app/lib/services';
 
 export async function GET() {
   try {
-    const categories = await prisma.serviceCategory.findMany({
-      where: {
-        isActive: true,
-      },
-      orderBy: {
-        sortOrder: 'asc',
-      },
-      include: {
-        services: {
-          where: {
-            isActive: true,
-            status: 'AVAILABLE',
-          },
-          orderBy: {
-            sortOrder: 'asc',
-          },
-        },
-      },
-    });
-
+    // DB-driven taxonomy grouped by category, each service flagged with
+    // provider-driven availability (no fake availability).
+    const categories = await getRequestableServices();
     return NextResponse.json({ categories });
   } catch (error: any) {
     console.error('Error fetching services:', error);

@@ -6,15 +6,11 @@ import { useSession } from 'next-auth/react';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import {
   ShoppingCart,
-  Users,
-  DollarSign,
   FolderOpen,
   Plus,
   AlertCircle,
   ArrowUpRight,
-  TrendingUp,
-  MessageSquare,
-  CheckSquare,
+  Briefcase,
 } from 'lucide-react';
 import { Order } from '@/app/lib/demo-data';
 import { getDashboardOrdersSummary } from '@/app/lib/orders-api';
@@ -23,11 +19,7 @@ import { getDashboardOrdersSummary } from '@/app/lib/orders-api';
 const IconMap = {
   ShoppingCart,
   FolderOpen,
-  DollarSign,
-  Users,
   AlertCircle,
-  TrendingUp,
-  CheckSquare,
 };
 
 // ── Role-based welcome header ─────────────────────────────────
@@ -70,7 +62,7 @@ function DashboardHeader({ name, role }: { name?: string | null; role?: string }
       </p>
       <h2 className="text-xl md:text-2xl font-bold text-[#111827]">{greeting}</h2>
       <p className="text-xs md:text-sm text-[#475569] mt-1.5">
-        تابع طلباتك، عروضك، ومشاريع متجرك من مكان واحد.
+        تابع طلباتك ومراجعة بروز من مكان واحد.
       </p>
     </div>
   );
@@ -83,11 +75,8 @@ export default function DashboardPage() {
   const userName = session?.user?.name;
 
   const [stats, setStats] = React.useState([
-    { label: 'طلبات جديدة',      value: '0', iconName: 'FolderOpen'   },
-    { label: 'قيد المراجعة',   value: '0', iconName: 'AlertCircle'  },
-    { label: 'العروض المستلمة',       value: '0', iconName: 'Users'        },
-    { label: 'المشاريع النشطة',       value: '0', iconName: 'TrendingUp'   },
-    { label: 'المشاريع المكتملة',     value: '0', iconName: 'CheckSquare'  },
+    { label: 'طلبات جديدة',   value: '0', iconName: 'FolderOpen'  },
+    { label: 'قيد المراجعة',  value: '0', iconName: 'AlertCircle' },
   ]);
   const [recentOrders, setRecentOrders] = React.useState<Order[]>([]);
 
@@ -99,11 +88,8 @@ export default function DashboardPage() {
         const reviewCount = summary.counts.UNDER_REVIEW || 0;
 
         setStats([
-          { label: 'طلبات جديدة',    value: String(newCount),      iconName: 'FolderOpen'  },
-          { label: 'قيد المراجعة',  value: String(reviewCount),    iconName: 'AlertCircle' },
-          { label: 'العروض المستلمة',      value: '0',                    iconName: 'Users'       },
-          { label: 'المشاريع النشطة',      value: '0',                    iconName: 'TrendingUp'  },
-          { label: 'المشاريع المكتملة',    value: '0',                    iconName: 'CheckSquare' },
+          { label: 'طلبات جديدة',   value: String(newCount),    iconName: 'FolderOpen'  },
+          { label: 'قيد المراجعة',  value: String(reviewCount), iconName: 'AlertCircle' },
         ]);
 
         setRecentOrders(summary.recentOrders);
@@ -115,10 +101,10 @@ export default function DashboardPage() {
   }, []);
 
   const quickActions = [
-    { label: 'طلب خدمة جديد', href: '/request',            icon: Plus,          color: 'text-white bg-[#06B6D4] hover:bg-[#0891B2] shadow-sm' },
-    { label: 'إدارة طلباتي',    href: '/dashboard/orders',   icon: ShoppingCart,  color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
-    { label: 'الرسائل',        href: '/dashboard/messages', icon: MessageSquare, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
-    { label: 'الفواتير',       href: '/dashboard/invoices', icon: DollarSign,    color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
+    { label: 'طلب خدمة جديد', href: '/request',          icon: Plus,         color: 'text-white bg-[#06B6D4] hover:bg-[#0891B2] shadow-sm' },
+    { label: 'إدارة طلباتي',   href: '/dashboard/orders', icon: ShoppingCart, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
+    { label: 'العروض',         href: '/dashboard/offers', icon: Briefcase,    color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
+    { label: 'المشاريع',       href: '/dashboard/projects', icon: FolderOpen,  color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
   ];
 
   const getStatusStyle = (status: Order['status']) => {

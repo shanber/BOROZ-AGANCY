@@ -1,16 +1,52 @@
 'use client';
 
-import { Bell, Menu, Search, Settings } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { NotificationsBell } from './NotificationsBell';
+import { usePathname } from 'next/navigation';
 
 interface TopbarProps {
   onToggleSidebar: () => void;
 }
 
+const pageTitles: Record<string, string> = {
+  '/dashboard': 'لوحة التحكم',
+  '/dashboard/admin': 'لوحة التحكم',
+  '/dashboard/admin/requests': 'مراجعة الطلبات',
+  '/dashboard/admin/providers': 'مقدمي الخدمات',
+  '/dashboard/admin/payouts': 'إدارة الصرف',
+  '/dashboard/orders': 'طلباتي',
+  '/dashboard/offers': 'العروض',
+  '/dashboard/projects': 'المشاريع',
+  '/dashboard/settings': 'الإعدادات',
+  '/dashboard/provider': 'لوحة التحكم',
+  '/dashboard/provider/opportunities': 'الفرص المتاحة',
+  '/dashboard/provider/pending': 'بانتظار الاعتماد',
+  '/dashboard/messages': 'الرسائل',
+  '/dashboard/tasks': 'المهام',
+  '/dashboard/merchants': 'التجار',
+  '/dashboard/leads': 'العملاء المحتملين',
+  '/dashboard/reports': 'التقارير',
+};
+
+function getPageTitle(pathname: string): string {
+  const exact = pageTitles[pathname];
+  if (exact) return exact;
+  if (pathname.startsWith('/dashboard/admin/requests/')) return 'تفاصيل الطلب';
+  if (pathname.startsWith('/dashboard/admin/providers/')) return 'تفاصيل مقدم الخدمة';
+  if (pathname.startsWith('/dashboard/admin/payouts/')) return 'تفاصيل الصرف';
+  if (pathname.startsWith('/dashboard/orders/')) return 'تفاصيل الطلب';
+  if (pathname.startsWith('/dashboard/offers/')) return 'تفاصيل العرض';
+  if (pathname.startsWith('/dashboard/projects/')) return 'تفاصيل المشروع';
+  if (pathname.startsWith('/dashboard/provider/opportunities/')) return 'تفاصيل الفرصة';
+  return 'لوحة التحكم';
+}
+
 export function Topbar({ onToggleSidebar }: TopbarProps) {
   const { data: session } = useSession();
+  const pathname = usePathname() ?? '';
   const globalRole = session?.user?.globalRole;
-  
+
   let identityName = session?.user?.name;
   let identitySubtitle = 'تاجر سلة';
 
@@ -23,52 +59,35 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
   } else {
     identityName = identityName || 'تاجر بروز';
   }
-  
+
   const initial = identityName ? identityName.charAt(0) : 'ب';
+  const pageTitle = getPageTitle(pathname);
+
   return (
-    <header className="sticky top-0 z-30 bg-white/95 border-b border-slate-200/80 shadow-sm backdrop-blur-md">
-      <div className="flex items-center justify-between px-4 md:px-8 py-4">
-        {/* Right side: Sidebar toggle on mobile (aligned right in RTL) */}
+    <header className="sticky top-0 z-30 bg-white border-b border-slate-200">
+      <div className="flex items-center justify-between px-4 md:px-8 py-3">
         <div className="flex items-center gap-3">
           <button
             onClick={onToggleSidebar}
-            className="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors md:hidden"
+            className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors md:hidden"
             aria-label="افتح القائمة الجانبية"
           >
-            <Menu size={22} />
+            <Menu size={20} />
           </button>
+          <h1 className="text-base md:text-lg font-display font-bold text-slate-900">
+            {pageTitle}
+          </h1>
         </div>
 
-        {/* Left side: Search & User actions (aligned left in RTL) */}
-        <div className="flex items-center gap-3 md:gap-4">
-          {/* Search bar on desktop */}
-          <div className="hidden sm:flex items-center gap-2 bg-slate-50 border border-slate-250/80 rounded-xl px-3 py-1.5 w-60 text-slate-400 focus-within:border-[#06B6D4] focus-within:bg-white transition-all">
-            <Search size={16} />
-            <input
-              type="text"
-              placeholder="ابحث هنا..."
-              className="bg-transparent border-none text-xs w-full text-slate-800 focus:outline-none placeholder-slate-500 font-medium font-sans"
-            />
-          </div>
+        <div className="flex items-center gap-2 md:gap-3">
+          <NotificationsBell />
 
-          {/* Notifications */}
-          <button className="relative p-2 hover:bg-slate-100 rounded-xl transition-colors" aria-label="التنبيهات">
-            <Bell size={18} className="text-slate-600" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#06B6D4] rounded-full animate-pulse" />
-          </button>
-
-          {/* Settings */}
-          <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors" aria-label="الإعدادات">
-            <Settings size={18} className="text-slate-600" />
-          </button>
-
-          {/* User Profile */}
-          <div className="flex items-center gap-2.5 pr-2.5 border-r border-slate-200">
+          <div className="flex items-center gap-2.5 pr-3 border-r border-slate-200">
             <div className="hidden md:block text-right">
-              <p className="text-xs font-bold text-[#111827] font-sans">{identityName}</p>
-              <p className="text-[10px] font-semibold text-slate-600 font-sans">{identitySubtitle}</p>
+              <p className="text-xs font-semibold text-slate-900">{identityName}</p>
+              <p className="text-[10px] font-medium text-slate-500">{identitySubtitle}</p>
             </div>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#06B6D4] to-[#0B132B] flex items-center justify-center shadow-sm text-white font-bold text-sm">
+            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-sm">
               {initial}
             </div>
           </div>

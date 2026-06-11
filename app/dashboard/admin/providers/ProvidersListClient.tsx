@@ -17,7 +17,7 @@ type Provider = {
   services: any[];
 };
 
-export default function ProvidersListClient({ initialProviders }: { initialProviders: Provider[] }) {
+export default function ProvidersListClient({ initialProviders, totalCount }: { initialProviders: Provider[]; totalCount: number }) {
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
 
@@ -164,6 +164,12 @@ export default function ProvidersListClient({ initialProviders }: { initialProvi
           </tbody>
         </table>
       </div>
+
+      {totalCount > 50 && (
+        <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 text-xs text-slate-500 text-center">
+          يتم عرض أول 50 من أصل {totalCount} مستقل. استخدم البحث للعثور على مستقلين محددين.
+        </div>
+      )}
     </div>
   );
 }

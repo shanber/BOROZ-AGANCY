@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { hashPassword } from '../app/lib/auth';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -19,9 +19,10 @@ async function main() {
       create: {
         email: 'admin@example.com',
         name: 'المسؤول',
-        password: await hashPassword('ChangeMe123!'),
+        password: await bcrypt.hash('ChangeMe123!', 12),
         phone: '+966501234567',
         isActive: true,
+        globalRole: 'ADMIN',
       },
     });
     console.log(`✅ Admin user: ${adminUser.email}`);
@@ -72,74 +73,10 @@ async function main() {
     });
     console.log(`✅ Plan: STARTER (100/month)`);
 
-    // 6. Create BOROZ Services (10 Services)
-    console.log('🛠️ Creating BOROZ services...');
-    const services = [
-      {
-        name: 'تخصيص متجر سلة',
-        basePrice: 2500,
-        estimatedDays: 10,
-      },
-      {
-        name: 'إدارة المتجر',
-        basePrice: 0,
-        estimatedDays: -1,
-      },
-      {
-        name: 'تصميم واجهات المتجر',
-        basePrice: 3000,
-        estimatedDays: 14,
-      },
-      {
-        name: 'تطوير وتحسين المتجر',
-        basePrice: 5000,
-        estimatedDays: 30,
-      },
-      {
-        name: 'تصميم البنرات',
-        basePrice: 1500,
-        estimatedDays: 7,
-      },
-      {
-        name: 'تصميم الهوية البصرية',
-        basePrice: 3000,
-        estimatedDays: 14,
-      },
-      {
-        name: 'إدارة الحملات الإعلانية',
-        basePrice: 4000,
-        estimatedDays: 30,
-      },
-      {
-        name: 'كتابة المحتوى التسويقي',
-        basePrice: 2000,
-        estimatedDays: 14,
-      },
-      {
-        name: 'إنشاء صفحات الهبوط',
-        basePrice: 2500,
-        estimatedDays: 7,
-      },
-      {
-        name: 'تحسين SEO للمتجر',
-        basePrice: 3500,
-        estimatedDays: 45,
-      },
-    ];
-
-    for (const service of services) {
-      await prisma.service.upsert({
-        where: { name: service.name },
-        update: {},
-        create: {
-          name: service.name,
-          basePrice: service.basePrice,
-          estimatedDays: service.estimatedDays,
-          isActive: true,
-        },
-      });
-    }
-    console.log(`✅ Created ${services.length} services`);
+    // 6. Seed service taxonomy
+    console.log('🛠️ Seeding service taxonomy via seed-services.js...');
+    console.log('   Use "node prisma/seed-services.js" for full taxonomy seeding.');
+    console.log('   Skipping inline service creation (schema evolved).');
 
     // 7. Create Demo Merchant
     console.log('🏪 Creating demo merchant...');
@@ -147,10 +84,11 @@ async function main() {
       data: {
         orgId: demoOrg.id,
         storeName: 'متجر تجريبي بروز',
+        storeUrl: 'https://demo-store.boroz.sa',
         email: 'merchant@boroz-demo.com',
         phone: '+966501234568',
-        sallaStoreId: 'demo-store-123',
-        status: 'ACTIVE',
+        contactName: 'محمد أحمد',
+        status: 'CLIENT',
       },
     });
     console.log(`✅ Demo merchant created`);
@@ -163,7 +101,8 @@ async function main() {
         name: 'محمد احمد',
         email: 'lead@example.com',
         phone: '+966501234569',
-        stage: 'INTERESTED',
+        storeUrl: 'https://lead-store.boroz.sa',
+        stage: 'NEW',
         source: 'WEBSITE',
       },
     });

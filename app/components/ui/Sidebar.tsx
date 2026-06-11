@@ -6,41 +6,40 @@ import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import {
   LayoutDashboard,
-  Target,
   Settings,
   ShoppingCart,
-  FolderOpen,
-  CheckSquare,
-  MessageSquare,
-  CreditCard,
   LogOut,
   X,
-  FileText,
   Users,
-  ClipboardCheck
+  ClipboardCheck,
+  Briefcase,
+  FolderOpen,
+  WalletMinimal,
 } from 'lucide-react';
 
 const merchantNavItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
   { href: '/dashboard/orders', icon: ShoppingCart, label: 'طلباتي' },
-  { href: '/dashboard/offers', icon: Target, label: 'العروض' },
+  { href: '/dashboard/offers', icon: Briefcase, label: 'العروض' },
   { href: '/dashboard/projects', icon: FolderOpen, label: 'المشاريع' },
-  { href: '/dashboard/contracts', icon: FileText, label: 'العقود' },
-  { href: '/dashboard/messages', icon: MessageSquare, label: 'الرسائل' },
-  { href: '/dashboard/files', icon: CheckSquare, label: 'الملفات' },
-  { href: '/dashboard/invoices', icon: CreditCard, label: 'الفواتير والمدفوعات' },
   { href: '/dashboard/settings', icon: Settings, label: 'الإعدادات' },
 ];
 
 const adminNavItems = [
+  { href: '/dashboard/admin', icon: LayoutDashboard, label: 'لوحة التحكم' },
   { href: '/dashboard/admin/requests', icon: ClipboardCheck, label: 'مراجعة الطلبات' },
   { href: '/dashboard/admin/providers', icon: Users, label: 'مقدمي الخدمات' },
-  { href: '/dashboard/settings', icon: Settings, label: 'الإعدادات' },
+  { href: '/dashboard/admin/payouts', icon: WalletMinimal, label: 'إدارة الصرف' },
+  { href: '/dashboard/admin/settings', icon: Settings, label: 'إعدادات المنصة' },
+  { href: '/dashboard/projects', icon: FolderOpen, label: 'المشاريع' },
+  { href: '/dashboard/settings', icon: Settings, label: 'إعدادات الحساب' },
 ];
 
 const providerNavItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
+  { href: '/dashboard/provider', icon: LayoutDashboard, label: 'لوحة التحكم' },
+  { href: '/dashboard/provider/opportunities', icon: Briefcase, label: 'الفرص المتاحة' },
   { href: '/dashboard/projects', icon: FolderOpen, label: 'المشاريع' },
+  { href: '/dashboard/provider/payouts', icon: WalletMinimal, label: 'المستحقات' },
   { href: '/dashboard/settings', icon: Settings, label: 'الإعدادات' },
 ];
 
@@ -62,28 +61,27 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   }
 
   const isActive = (href: string) => {
-    if (href === '/dashboard') {
-      return pathname === '/dashboard';
+    const exactOnly = ['/dashboard', '/dashboard/admin', '/dashboard/provider'];
+    if (exactOnly.includes(href)) {
+      return pathname === href;
     }
-    return pathname.startsWith(href);
+    return pathname === href || pathname.startsWith(href + '/');
   };
 
   return (
     <aside
-      className={`fixed right-0 top-0 h-screen w-[260px] bg-[#0B132B] text-slate-300 border-l border-slate-800 z-50 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${
+      className={`fixed right-0 top-0 h-screen w-[260px] bg-white border-l border-slate-200 z-50 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
-      {/* Header / Logo */}
-      <div className="p-5 border-b border-slate-800 flex items-center justify-between shrink-0">
+      <div className="relative p-5 border-b border-slate-100 flex items-center justify-center shrink-0">
         <Link
           href="/dashboard"
           onClick={onClose}
-          className="flex flex-col gap-1"
+          className="flex flex-col items-center text-center gap-1"
         >
-          <Image src="/شعار%20بروز.svg" alt="بروز" width={90} height={32} className="h-8 w-auto object-contain invert hue-rotate-180" />
-          {/* Role label under logo */}
-          <span className="text-[10px] font-semibold text-slate-400 tracking-wide mt-0.5">
+          <Image src="/شعار%20بروز.svg" alt="بروز" width={90} height={32} className="h-8 w-auto object-contain" />
+          <span className="mt-0.5 w-full text-center text-[10px] font-semibold tracking-wide text-slate-400">
             {globalRole === 'ADMIN'
               ? 'لوحة تحكم الإدارة'
               : globalRole === 'PROVIDER'
@@ -93,15 +91,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </Link>
         <button
           onClick={onClose}
-          className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg md:hidden"
+          className="absolute left-5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg md:hidden"
           aria-label="إغلاق القائمة"
         >
           <X size={20} />
         </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 flex flex-col gap-1.5 p-4 overflow-y-auto min-h-0">
+      <nav className="flex-1 flex flex-col gap-1 p-4 overflow-y-auto min-h-0">
         {currentNavItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
@@ -110,38 +107,32 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               key={item.href}
               href={item.href}
               onClick={onClose}
-              className={`
-                flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all duration-200 group
-                ${
-                  active
-                    ? 'bg-[#06B6D4] text-white font-medium shadow-md shadow-[#06B6D4]/20'
-                    : 'hover:bg-slate-800/60 hover:text-white'
-                }
-              `}
+              className={`flex items-center gap-3.5 px-4 py-2.5 rounded-xl transition-all duration-200 group ${
+                active
+                  ? 'bg-blue-50 text-blue-600 font-semibold'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+              }`}
             >
-              <Icon 
-                size={18} 
-                className={`transition-colors duration-200 ${
-                  active ? 'text-white' : 'text-slate-400 group-hover:text-white'
-                }`} 
-              />
-              <span className="text-sm font-semibold font-sans">{item.label}</span>
+              <Icon size={18} className={`transition-colors duration-200 shrink-0 ${
+                active ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
+              }`} />
+              <span className="text-sm font-display">{item.label}</span>
+              {active && <span className="w-1 h-1 rounded-full bg-blue-600 mr-auto" />}
             </Link>
           );
         })}
       </nav>
 
-      {/* Logout / User Info footer */}
-      <div className="p-4 border-t border-slate-800 bg-[#070D1E] shrink-0">
+      <div className="p-4 border-t border-slate-100 shrink-0">
         <button
           onClick={() => {
             signOut({ callbackUrl: '/login' });
             onClose();
           }}
-          className="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+          className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-semibold text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
         >
           <LogOut size={18} />
-          <span className="font-sans">تسجيل الخروج</span>
+          <span className="font-display">تسجيل الخروج</span>
         </button>
       </div>
     </aside>

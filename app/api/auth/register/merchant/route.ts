@@ -5,7 +5,7 @@ import prisma from '@/app/lib/prisma';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, email, password, storeName, storeUrl } = body;
+    const { name, email, password, phone, storeName, storeUrl } = body;
 
     if (!name || !email || !password || !storeName) {
       return NextResponse.json({ error: 'الرجاء تعبئة جميع الحقول المطلوبة' }, { status: 400 });
@@ -31,6 +31,7 @@ export async function POST(req: Request) {
           name,
           email,
           password: hashedPassword,
+          phone: phone || '',
           globalRole: 'MERCHANT',
         },
       });

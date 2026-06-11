@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/Button';
 
 export default function MessagesPage() {
   const mockConversations = [
-    { name: 'م. خالد عبد الرحمن (مقدم خدمة)', lastMsg: 'تم ربط الدفع بنجاح، يرجى المراجعة.', time: 'منذ ١٠ دقائق', active: true },
-    { name: 'عمر اليافعي (تصميم)', lastMsg: 'أرسلت لك المسودة الأولى للثيم المخصص.', time: 'أمس، ٣:٤٥ م', active: false },
-    { name: 'سارة العتيبي (SEO)', lastMsg: 'بدأنا في كتابة الميتا والتجهيز الأولي للكلمات.', time: '٢ يونيو ٢٠٢٦', active: false },
+    { name: 'م. خالد عبد الرحمن (مقدم خدمة)', lastMsg: 'تم ربط الدفع بنجاح، يرجى المراجعة.', time: 'منذ 10 دقائق', active: true },
+    { name: 'عمر اليافعي (تصميم)', lastMsg: 'أرسلت لك المسودة الأولى للثيم المخصص.', time: 'أمس، 3:45 م', active: false },
+    { name: 'سارة العتيبي (SEO)', lastMsg: 'بدأنا في كتابة الميتا والتجهيز الأولي للكلمات.', time: '2 يونيو 2026', active: false },
   ];
 
   return (
@@ -85,7 +85,7 @@ export default function MessagesPage() {
                 <p className="text-xs text-slate-700 leading-relaxed">
                   مرحباً بك! لقد استلمت طلب تخصيص المتجر، وجاري العمل على ضبط بوابات الدفع حالياً.
                 </p>
-                <span className="block text-[8px] text-slate-400 text-left">١٠:١٥ ص</span>
+                <span className="block text-[8px] text-slate-400 text-left">10:15 ص</span>
               </div>
             </div>
 
@@ -94,7 +94,7 @@ export default function MessagesPage() {
                 <p className="text-xs leading-relaxed">
                   ممتاز جداً يا خالد. هل ستقوم بضبط الشحن أيضاً مع نفس الطلب؟
                 </p>
-                <span className="block text-[8px] text-[#0B132B]/60 text-right">١٠:١٨ ص</span>
+                <span className="block text-[8px] text-[#0B132B]/60 text-right">10:18 ص</span>
               </div>
             </div>
 
@@ -106,7 +106,7 @@ export default function MessagesPage() {
                 <p className="text-xs text-slate-700 leading-relaxed">
                   نعم بالتأكيد، قمت بتهيئة سمسا وسيكون الشحن مفعلاً تلقائياً. تم ربط الدفع بنجاح، يرجى المراجعة.
                 </p>
-                <span className="block text-[8px] text-slate-400 text-left">١٠:٢٥ ص</span>
+                <span className="block text-[8px] text-slate-400 text-left">10:25 ص</span>
               </div>
             </div>
           </div>

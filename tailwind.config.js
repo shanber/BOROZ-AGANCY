@@ -17,6 +17,15 @@ const config = {
           dark: '#111827',
           muted: '#475569',
         },
+        brand: {
+          bg: '#F8FAFC',
+          surface: '#FFFFFF',
+          border: '#E2E8F0',
+          accent: '#2563EB',
+          'accent-light': '#EFF6FF',
+          muted: '#64748B',
+          navy: '#0B132B',
+        },
         status: {
           success: '#10B981',
           warning: '#F59E0B',
@@ -35,8 +44,10 @@ const config = {
         glass: 'var(--border-glass)',
       },
       fontFamily: {
-        sans: ['var(--font-ibm-plex-arabic)', 'IBM Plex Sans Arabic', 'system-ui', 'sans-serif'],
+        sans: ['Tajawal', 'Rubik', 'IBM Plex Sans Arabic', 'system-ui', 'sans-serif'],
         mono: ['Fira Code', 'monospace'],
+        display: ['Tajawal', 'Rubik', 'sans-serif'],
+        numeric: ['Inter', 'system-ui', 'sans-serif'],
       },
       spacing: {
         safe: 'max(1rem, env(safe-area-inset-bottom))',
@@ -60,6 +71,15 @@ const config = {
   plugins: [
     require('tailwindcss-rtl'),
     require('@tailwindcss/typography'),
+    function ({ addUtilities }) {
+      addUtilities({
+        '.hide-scrollbar': {
+          '-ms-overflow-style': 'none',
+          'scrollbar-width': 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
+        },
+      });
+    },
   ],
   corePlugins: {
     // Disable default RTL since we use plugin

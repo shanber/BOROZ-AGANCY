@@ -22,6 +22,17 @@ model User {
   password   String // bcrypt hashed
   phone      String?
   avatar     String?
+  bio        String?
+  city       String?
+  country    String?
+  // ── Merchant profile fields (self-updated via settings) ──
+  storeName         String?
+  storeUrl          String?
+  businessType      String?
+  companyName       String?
+  storeNotes        String?
+  preferredContact  String?
+  // ──────────────────────────────────────────────────────
   isActive   Boolean  @default(true)
   globalRole UserRole @default(MERCHANT)
   createdAt  DateTime @default(now())
@@ -34,6 +45,10 @@ model User {
   activityLogs  ActivityLog[]
   expertProfile ExpertProfile?
   orders        Order[] // Phase 11: client orders submitted by this merchant
+  projectMessages ProjectMessage[]
+  projectDeliveries ProjectDelivery[]
+  providerPayouts ProviderPayout[] @relation("ProviderPayouts")
+  reviewedPayouts ProviderPayout[] @relation("ReviewedPayouts")
 
   @@map("users")
 }
@@ -129,6 +144,29 @@ enum SubscriptionPlan {
 // NOTIFICATIONS
 // ============================================================================
 
+enum NotificationType {
+  OFFER_RECEIVED
+  OFFER_ACCEPTED
+  PROJECT_CREATED
+  PROJECT_STARTED
+  PROJECT_MESSAGE_RECEIVED
+  DELIVERY_SUBMITTED
+  DELIVERY_APPROVED
+  DELIVERY_REVISION_REQUESTED
+  PAYOUT_APPROVED
+  PAYOUT_HELD
+  PAYOUT_PAID
+  GENERAL
+}
+
+enum PayoutStatus {
+  PENDING_REVIEW
+  APPROVED
+  ON_HOLD
+  PAID
+  CANCELLED
+}
+
 model Notification {
   id           String       @id @default(cuid())
   orgId        String
@@ -136,11 +174,16 @@ model Notification {
   userId       String
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  type      NotificationType @default(GENERAL)
   title   String
   message String
+  entityType String?
+  entityId   String?
+  url        String?
   isRead  Boolean @default(false)
 
   createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   readAt    DateTime?
 
   @@index([orgId])
@@ -276,6 +319,7 @@ model Service {
 
   // Relations
   orders         ServiceOrder[]
+  clientOrders   Order[] // Phase 2: client requests linked to the canonical service
   projects       Project[]
   expertServices ExpertService[]
   Organization   Organization?   @relation(fields: [organizationId], references: [id])
@@ -304,11 +348,16 @@ model ExpertProfile {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Public Profile
-  specialtyTitle    String?
-  bio               String?
-  yearsOfExperience Int?
-  portfolioUrl      String?
-  linkedinUrl       String?
+  specialtyTitle       String?
+  bio                  String?
+  yearsOfExperience    Int?
+  portfolioUrl         String?
+  linkedinUrl          String?
+  availability         String?
+  priceRangeMin        Float?
+  priceRangeMax        Float?
+  preferredProjectTypes String?
+  sallaExperience      String?
 
   // Approval Workflow
   approvalStatus  ProviderApprovalStatus @default(PENDING)
@@ -319,8 +368,11 @@ model ExpertProfile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  services       ExpertService[]
-  portfolioItems PortfolioItem[]
+  services         ExpertService[]
+  portfolioItems   PortfolioItem[]
+  offers           Offer[]
+  offerInvitations OfferInvitation[]
+  projects         Project[]
 
   @@index([approvalStatus])
   @@map("expert_profiles")
@@ -378,7 +430,6 @@ model ServiceOrder {
 
   // Relations
   fileAssets  FileAsset[]
-  project     Project?
   activityLog ActivityLog[]
 
   @@index([orgId])
@@ -403,43 +454,131 @@ enum OrderStatus {
 // ============================================================================
 
 model Project {
-  id            String        @id @default(cuid())
-  orgId         String
-  organization  Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  name          String
-  merchantId    String
-  merchant      Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  serviceId     String
-  service       Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  orderId       String        @unique
-  order         ServiceOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  status        ProjectStatus @default(PENDING)
-  startDate     DateTime?
-  dueDate       DateTime?
-  completedDate DateTime?
-  description   String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  deletedAt     DateTime? // soft delete
+  id               String         @id @default(cuid())
+  orgId            String
+  organization     Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name             String
+  merchantId       String?
+  merchant         Merchant?      @relation(fields: [merchantId], references: [id], onDelete: SetNull)
+  serviceId        String?
+  service          Service?       @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  orderId          String         @unique
+  order            Order          @relation("OrderProject", fields: [orderId], references: [id], onDelete: Cascade)
+  acceptedOfferId  String?        @unique
+  acceptedOffer    Offer?         @relation("AcceptedOfferProject", fields: [acceptedOfferId], references: [id], onDelete: SetNull)
+  expertProfileId  String?
+  expertProfile    ExpertProfile? @relation(fields: [expertProfileId], references: [id], onDelete: SetNull)
+  status           ProjectStatus  @default(KICKOFF_PENDING)
+  startDate        DateTime?
+  dueDate          DateTime?
+  completedDate    DateTime?
+  description      String?
+  scopeSummary     String?
+  deliverables     String?
+  price            Float?
+  deliveryDays     Int?
+  revisionsIncluded Int?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  deletedAt        DateTime?
 
-  // Relations
   tasks      Task[]
   fileAssets FileAsset[]
+  messages   ProjectMessage[]
+  deliveries ProjectDelivery[]
+  payout     ProviderPayout?
 
   @@unique([orgId, orderId])
   @@index([orgId])
   @@index([merchantId])
+  @@index([acceptedOfferId])
+  @@index([expertProfileId])
   @@index([status])
   @@index([deletedAt])
   @@map("projects")
 }
 
 enum ProjectStatus {
+  KICKOFF_PENDING
+  ACTIVE
+  PAUSED
+  DELIVERED
+  REVISION_REQUESTED
   PENDING
   IN_PROGRESS
   ON_HOLD
   COMPLETED
   CANCELLED
+}
+
+enum DeliveryStatus {
+  SUBMITTED
+  APPROVED
+  REVISION_REQUESTED
+  CANCELLED
+}
+
+model ProjectMessage {
+  id           String    @id @default(cuid())
+  projectId    String
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  senderUserId String
+  senderUser   User      @relation(fields: [senderUserId], references: [id], onDelete: Cascade)
+  body         String
+  readAt       DateTime?
+  isInternal   Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([projectId, createdAt])
+  @@index([senderUserId])
+  @@index([isInternal])
+  @@map("project_messages")
+}
+
+model ProjectDelivery {
+  id                  String         @id @default(cuid())
+  projectId           String
+  project             Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  submittedById       String
+  submittedBy         User           @relation(fields: [submittedById], references: [id])
+  status              DeliveryStatus @default(SUBMITTED)
+  title               String
+  description         String
+  deliverableLinks    String?
+  revisionNote        String?
+  submittedAt         DateTime       @default(now())
+  approvedAt          DateTime?
+  revisionRequestedAt DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  @@index([projectId, status])
+  @@index([submittedById])
+  @@map("project_deliveries")
+}
+
+model ProviderPayout {
+  id           String       @id @default(cuid())
+  projectId    String       @unique
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  providerId   String
+  provider     User         @relation("ProviderPayouts", fields: [providerId], references: [id])
+  amount       Float        // net amount after platform fee
+  platformFee  Float        // BOROZ commission
+  grossAmount  Float        // total project value from accepted offer
+  status       PayoutStatus @default(PENDING_REVIEW)
+  holdReason   String?
+  reviewedById String?
+  reviewedBy   User?        @relation("ReviewedPayouts", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+  paidAt       DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([providerId])
+  @@index([status])
+  @@map("provider_payouts")
 }
 
 model Task {
@@ -571,6 +710,21 @@ model SallaStore {
 }
 
 // ============================================================================
+// PLATFORM SETTINGS
+// ============================================================================
+
+model PlatformSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("platform_settings")
+}
+
+// ============================================================================
 // AUDIT
 // ============================================================================
 
@@ -614,7 +768,9 @@ model Order {
   phone        String
   email        String?
   sallaUrl     String?
-  serviceType  String
+  serviceType  String // denormalized service slug/label cache (kept for legacy + display)
+  serviceId    String? // Phase 2: canonical service reference
+  service      Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
   budget       String?
   priority     String    @default("عادي")
   description  String
@@ -622,18 +778,93 @@ model Order {
   status       String    @default("SUBMITTED")
   adminNote    String?
   internalNote String?
+  selectedOfferId String?   @unique
   reviewedAt   DateTime?
   reviewedById String?
   source       String    @default("website")
+  offersOpenedAt DateTime?
+  offersClosedAt DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  offers       Offer[]           @relation("OrderOffers")
+  invitations  OfferInvitation[] @relation("OrderInvitations")
+  selectedOffer Offer?           @relation("SelectedOffer", fields: [selectedOfferId], references: [id], onDelete: SetNull)
+  project      Project?          @relation("OrderProject")
 
   @@index([userId])
   @@index([orgId])
   @@index([merchantId])
+  @@index([serviceId])
   @@index([status])
+  @@index([selectedOfferId])
   @@index([userId, createdAt])
   @@index([status, createdAt])
   @@index([serviceType, createdAt])
   @@map("orders")
+}
+
+enum OfferStatus {
+  DRAFT
+  SUBMITTED
+  WITHDRAWN
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum OfferInvitationStatus {
+  INVITED
+  VIEWED
+  DECLINED
+  OFFER_SUBMITTED
+  EXPIRED
+}
+
+model Offer {
+  id                String      @id @default(cuid())
+  orderId           String
+  order             Order       @relation("OrderOffers", fields: [orderId], references: [id], onDelete: Cascade)
+  expertProfileId   String
+  expertProfile     ExpertProfile @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+  status            OfferStatus @default(SUBMITTED)
+  price             Float
+  deliveryDays      Int
+  scopeSummary      String
+  deliverables      String
+  revisionsIncluded Int
+  assumptions       String
+  exclusions        String
+  messageToMerchant String
+  submittedAt       DateTime?
+  acceptedAt        DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  selectedByOrder   Order?      @relation("SelectedOffer")
+  project           Project?    @relation("AcceptedOfferProject")
+
+  @@unique([orderId, expertProfileId])
+  @@index([orderId])
+  @@index([expertProfileId])
+  @@index([status])
+  @@map("offers")
+}
+
+model OfferInvitation {
+  id              String                @id @default(cuid())
+  orderId         String
+  order           Order                 @relation("OrderInvitations", fields: [orderId], references: [id], onDelete: Cascade)
+  expertProfileId String
+  expertProfile   ExpertProfile         @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+  status          OfferInvitationStatus @default(INVITED)
+  invitedAt       DateTime              @default(now())
+  expiresAt       DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@unique([orderId, expertProfileId])
+  @@index([orderId])
+  @@index([expertProfileId])
+  @@index([status])
+  @@map("offer_invitations")
 }

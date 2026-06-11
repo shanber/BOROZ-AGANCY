@@ -5,6 +5,7 @@ import { Eye, Search } from 'lucide-react';
 import prisma from '@/app/lib/prisma';
 import { authOptions } from '@/app/lib/auth';
 import { services } from '@/app/lib/demo-data';
+import { resolveServiceLabel } from '@/app/lib/services';
 import { formatCurrency, formatShortDate } from '@/app/lib/formatters';
 import { getOrderStatusLabel, getOrderStatusStyle, orderReviewStatuses } from '@/app/lib/order-status';
 import { Card } from '@/components/ui/Card';
@@ -14,7 +15,7 @@ import { getCached } from '@/app/lib/server-cache';
 const pageSize = 20;
 
 function serviceLabel(serviceType: string) {
-  return services.find((service) => service.key === serviceType)?.label || serviceType || 'خدمة أخرى';
+  return resolveServiceLabel(serviceType);
 }
 
 function buildSearchParams(params: Record<string, string | number | undefined>) {
@@ -166,12 +167,12 @@ export default async function AdminRequestsPage({
                         <div className="font-bold text-slate-800">{request.storeName}</div>
                         <div className="mt-0.5 text-[10px] text-slate-500">{request.managerName}</div>
                       </td>
-                      <td className="px-5 py-4 text-slate-650">{serviceLabel(request.serviceType)}</td>
+                      <td className="px-5 py-4 text-slate-500">{serviceLabel(request.serviceType)}</td>
                       <td className="px-5 py-4 font-bold text-slate-800">
                         {request.budget ? formatCurrency(request.budget) : 'قيد التقدير'}
                       </td>
                       <td className="px-5 py-4 text-center">
-                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-650">
+                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-500">
                           {request.priority}
                         </span>
                       </td>
@@ -187,7 +188,7 @@ export default async function AdminRequestsPage({
                       <td className="px-5 py-4 text-center">
                         <Link
                           href={`/dashboard/admin/requests/${request.orderNumber}`}
-                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-bold text-slate-650 transition-colors hover:bg-slate-100 hover:text-[#111827]"
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-bold text-slate-500 transition-colors hover:bg-slate-100 hover:text-[#111827]"
                         >
                           <Eye size={12} />
                           مراجعة

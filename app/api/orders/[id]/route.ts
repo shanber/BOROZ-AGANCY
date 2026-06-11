@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import prisma from '@/app/lib/prisma';
-import { services } from '@/app/lib/demo-data';
+import { resolveServiceLabel } from '@/app/lib/services';
 import { formatCurrency, formatShortDate } from '@/app/lib/formatters';
 import { getOrderStatusLabel } from '@/app/lib/order-status';
 import { merchantOrderOwnershipFilter } from '@/app/lib/order-access';
 
 function serviceLabel(serviceType: string) {
-  return services.find((service) => service.key === serviceType)?.label || serviceType || 'خدمة أخرى';
+  return resolveServiceLabel(serviceType);
 }
 
 function formatDate(date: Date) {
@@ -18,11 +18,15 @@ function formatDate(date: Date) {
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-  const ownerFilter = merchantOrderOwnershipFilter(session);
+    if (session.user.globalRole !== 'MERCHANT') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const ownerFilter = merchantOrderOwnershipFilter(session);
 
   const order = await prisma.order.findFirst({
     where: {
@@ -47,6 +51,12 @@ export async function GET(_request: Request, { params }: { params: { id: string 
       description: true,
       notes: true,
       adminNote: true,
+      project: {
+        select: {
+          id: true,
+          status: true,
+        },
+      },
       createdAt: true,
       updatedAt: true,
     },
@@ -73,6 +83,8 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     description: order.description,
     notes: order.notes || '',
     adminNote: order.adminNote || '',
+    projectId: order.project?.id,
+    projectStatus: order.project?.status,
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
   });

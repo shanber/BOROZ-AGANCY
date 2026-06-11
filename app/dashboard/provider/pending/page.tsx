@@ -40,9 +40,15 @@ export default async function PendingApprovalPage() {
             <h1 className="text-2xl font-bold text-[#111827] mb-3">
               نأسف، تم رفض طلبك
             </h1>
-            <p className="text-[#475569] mb-8 leading-relaxed text-base">
+            <p className="text-[#475569] mb-6 leading-relaxed text-base">
               بعد المراجعة، لم نتمكن من قبول طلب انضمامك لمنصة بروز في الوقت الحالي. يمكنك التواصل مع الدعم الفني لمزيد من التفاصيل.
             </p>
+            {provider?.rejectionReason && (
+              <div className="bg-red-50/60 border border-red-100 rounded-xl p-5 mb-8 text-right">
+                <h3 className="text-sm font-semibold text-red-800 mb-1.5">سبب الرفض</h3>
+                <p className="text-sm leading-relaxed text-red-700">{provider.rejectionReason}</p>
+              </div>
+            )}
           </>
         );
       case 'SUSPENDED':
