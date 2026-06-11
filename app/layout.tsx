@@ -15,7 +15,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
-  themeColor: '#0B132B',
+  themeColor: '#FFFFFF',
 };
 
 export default function RootLayout({
@@ -27,7 +27,7 @@ export default function RootLayout({
     // Apply the CSS variable to html so every child can use it
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#0B132B" />
+        <meta name="theme-color" content="#FFFFFF" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
