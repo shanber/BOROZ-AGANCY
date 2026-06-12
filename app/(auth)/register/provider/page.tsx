@@ -353,28 +353,28 @@ export default function ProviderRegisterPage() {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">الاسم الكامل *</label>
                   <div className="relative">
-                    <input type="text" name="name" placeholder="اسمك الكامل" value={formData.name} onChange={handleChange} className="w-full px-4 py-3 pr-11 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
+                    <input type="text" name="name" placeholder="اسمك الكامل" value={formData.name} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
                     <UserCircle2 size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">البريد الإلكتروني *</label>
                   <div className="relative">
-                    <input type="email" name="email" placeholder="example@domain.com" value={formData.email} onChange={handleChange} className="w-full px-4 py-3 pr-11 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
+                    <input type="email" name="email" placeholder="example@domain.com" value={formData.email} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
                     <Mail size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">كلمة المرور *</label>
                   <div className="relative">
-                    <input type="password" name="password" placeholder="••••••••" value={formData.password} onChange={handleChange} className="w-full px-4 py-3 pr-11 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
+                    <input type="password" name="password" placeholder="••••••••" value={formData.password} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
                     <Lock size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">تأكيد كلمة المرور *</label>
                   <div className="relative">
-                    <input type="password" name="confirmPassword" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} className="w-full px-4 py-3 pr-11 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
+                    <input type="password" name="confirmPassword" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
                     <Lock size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
@@ -401,14 +401,14 @@ export default function ProviderRegisterPage() {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">المسمى المهني الأساسي *</label>
                   <div className="relative">
-                    <input type="text" name="specialtyTitle" placeholder="مثال: مطور متاجر سلة، أخصائي تسويق..." value={formData.specialtyTitle} onChange={handleChange} className="w-full px-4 py-3 pr-11 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
+                    <input type="text" name="specialtyTitle" placeholder="مثال: مطور متاجر سلة، أخصائي تسويق..." value={formData.specialtyTitle} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
                     <Briefcase size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">سنوات الخبرة *</label>
                   <div className="relative">
-                    <input type="number" name="yearsOfExperience" placeholder="مثال: 3" min="0" value={formData.yearsOfExperience} onChange={handleChange} className="w-full px-4 py-3 pr-11 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
+                    <input type="number" name="yearsOfExperience" placeholder="مثال: 3" min="0" value={formData.yearsOfExperience} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
                     <Briefcase size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
@@ -559,14 +559,14 @@ export default function ProviderRegisterPage() {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">رابط معرض الأعمال (Behance, Dribbble...)</label>
                   <div className="relative">
-                    <input type="url" name="portfolioUrl" placeholder="https://..." value={formData.portfolioUrl} onChange={handleChange} className="w-full px-4 py-3 pr-11 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4]" />
+                    <input type="url" name="portfolioUrl" placeholder="https://..." value={formData.portfolioUrl} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4]" />
                     <LinkIcon size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">رابط حساب LinkedIn</label>
                   <div className="relative">
-                    <input type="url" name="linkedinUrl" placeholder="https://linkedin.com/in/..." value={formData.linkedinUrl} onChange={handleChange} className="w-full px-4 py-3 pr-11 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4]" />
+                    <input type="url" name="linkedinUrl" placeholder="https://linkedin.com/in/..." value={formData.linkedinUrl} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4]" />
                     <LinkIcon size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>

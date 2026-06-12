@@ -268,11 +268,22 @@ input[type="number"],
 textarea,
 select {
   width: 100%;
-  padding: 0.625rem 0.875rem;
+  padding-block: 0.625rem;
+  padding-inline: 0.875rem;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   transition: all 0.2s ease;
+}
+
+/* Inputs with a leading icon (absolutely positioned on the inline-start / right side in RTL).
+   Logical padding keeps text & placeholder clear of the icon. Self-contained so it applies
+   uniformly to any input type (text/email/password/url…); selector specificity (0,1,1) plus
+   later source order beats both the base rule above and any Tailwind padding utility. */
+input.has-icon {
+  padding-block: 0.625rem;
+  padding-inline-start: 2.75rem;
+  padding-inline-end: 0.875rem;
 }
 
 input[type="text"]:focus,

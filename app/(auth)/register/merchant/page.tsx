@@ -155,7 +155,7 @@ export default function RegisterPage() {
                   placeholder="اسمك الكامل"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 pr-10 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
                   required
                 />
                 <Store size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -173,7 +173,7 @@ export default function RegisterPage() {
                   placeholder="اسم متجرك على سلة"
                   value={formData.storeName}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 pr-10 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
                   required
                 />
                 <Store size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -192,7 +192,7 @@ export default function RegisterPage() {
                   placeholder="https://salla.sa/yourstore"
                   value={formData.storeUrl}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 pr-10 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
                   required
                 />
                 <Store size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -211,7 +211,7 @@ export default function RegisterPage() {
                   placeholder="example@domain.com"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 pr-10 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
                   required
                 />
                 <Mail size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -245,7 +245,7 @@ export default function RegisterPage() {
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 pr-10 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
                   required
                 />
                 <Lock size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -264,7 +264,7 @@ export default function RegisterPage() {
                   placeholder="••••••••"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 pr-10 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
                   required
                 />
                 <Lock size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
