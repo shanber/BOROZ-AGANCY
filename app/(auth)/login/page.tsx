@@ -195,7 +195,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#6D5DFB] hover:bg-[#4F46E5] disabled:bg-slate-400 text-white font-semibold py-2.5 rounded-lg transition-colors"
+              className="w-full bg-[#6D5DFB] hover:bg-[#4F46E5] disabled:bg-slate-400 text-white font-semibold py-2.5 rounded-xl transition-colors"
             >
               {isLoading ? 'جاري الدخول...' : 'تسجيل الدخول'}
             </button>

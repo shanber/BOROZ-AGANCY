@@ -172,104 +172,189 @@ function Navbar() {
 
 /* ─── Mac Dashboard Mockup ─── */
 
-function MacDashboardMockup() {
+/* ─── Hero Mockup: Layered Product Story (3 dashboards) ───
+   بروز ليست لوحة واحدة: التاجر يطلب، إدارة بروز تدير التنفيذ، الخبير ينفّذ.
+   لوحة الإدارة في الأمام لأنها قيمة بروز الأساسية (طبقة الإدارة والتشغيل). */
+
+const STATUS_TONES: Record<string, { bg: string; fg: string }> = {
+  green: { bg: '#DCFCE7', fg: '#15803D' },   // مكتمل / نشط
+  orange: { bg: '#FFEDD5', fg: '#C2410C' },  // بانتظار
+  purple: { bg: '#EEF2FF', fg: '#6D5DFB' },  // عروض / فرص
+};
+
+function StatusBadge({ label, tone }: { label: string; tone: keyof typeof STATUS_TONES }) {
+  const t = STATUS_TONES[tone];
   return (
-    <div className="relative rounded-3xl overflow-hidden shadow-2xl" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', width: '620px', height: '420px' }}>
-      {/* Mac Title Bar */}
-      <div className="h-10 flex items-center px-4 gap-3 flex-shrink-0" style={{ background: '#F8FAFC', borderBottom: '1px solid #E5E7EB' }}>
-        <div className="flex gap-2">
-          <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#FF5F56' }} />
-          <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#FFBD2E' }} />
-          <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#27C93F' }} />
+    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: t.bg, color: t.fg }}>
+      {label}
+    </span>
+  );
+}
+
+function WindowFrame({
+  title,
+  primary = false,
+  children,
+}: {
+  title: string;
+  primary?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="rounded-2xl overflow-hidden bg-white w-full"
+      style={{
+        border: primary ? '1px solid #DDD6FE' : '1px solid #E5E7EB',
+        boxShadow: primary
+          ? '0 26px 50px -14px rgba(109,93,251,0.35)'
+          : '0 18px 36px -14px rgba(17,24,39,0.18)',
+      }}
+    >
+      {/* Title bar */}
+      <div className="h-8 flex items-center px-3 gap-2" style={{ background: '#F8FAFC', borderBottom: '1px solid #E5E7EB' }}>
+        <div className="flex gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#FF5F56' }} />
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#FFBD2E' }} />
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#27C93F' }} />
         </div>
-        <span className="text-[11px] font-semibold text-slate-600 flex-1 text-center">لوحة بروز</span>
-        <div className="w-10" />
+        <span className="flex-1 text-center text-[11px] font-bold" style={{ color: primary ? '#6D5DFB' : '#475569' }}>
+          {title}
+        </span>
+        <span className="w-8" />
       </div>
+      <div className="p-3">{children}</div>
+    </div>
+  );
+}
 
-      {/* Dashboard Content */}
-      <div className="flex h-[calc(100%-40px)] overflow-hidden">
-        {/* Sidebar */}
-        <div className="w-40 flex-shrink-0 bg-white border-l border-slate-200 p-3 space-y-1 overflow-y-auto" style={{ borderColor: '#E5E7EB' }}>
-          <div className="px-2.5 py-1.5 text-[10px] font-bold text-slate-500 mb-3">القائمة</div>
-          {[
-            { label: 'لوحة التحكم', active: true },
-            { label: 'الطلبات', active: false },
-            { label: 'العروض', active: false },
-            { label: 'المشاريع', active: false },
-            { label: 'الرسائل', active: false },
-          ].map((item, i) => (
-            <div
-              key={i}
-              className="px-2.5 py-2 rounded text-[10px] font-medium cursor-pointer transition-colors"
-              style={item.active ? { background: '#EEF2FF', color: '#6D5DFB' } : { color: '#64748B' }}
-            >
-              {item.label}
-            </div>
-          ))}
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 bg-white overflow-y-auto p-3.5 space-y-3">
-          {/* Header */}
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-            <div>
-              <h3 className="text-[12px] font-bold text-slate-900">لوحة متابعة التنفيذ</h3>
-              <p className="text-[9px] text-slate-500 mt-0.5">جميع طلباتك وعروضك في مكان واحد</p>
-            </div>
-            <button className="text-[9px] font-semibold px-2 py-1 rounded" style={{ background: '#6D5DFB', color: '#FFFFFF' }}>
-              + طلب جديد
-            </button>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-4 gap-2">
-            {[
-              { label: 'الطلبات', value: '12', icon: '📋' },
-              { label: 'العروض', value: '8', icon: '💼' },
-              { label: 'المشاريع', value: '5', icon: '✨' },
-              { label: 'التسليمات', value: '3', icon: '✓' },
-            ].map((stat, i) => (
-              <div key={i} className="p-2 rounded text-center" style={{ background: '#F8FAFC', border: '1px solid #EEF2FF' }}>
-                <div className="text-sm mb-0.5">{stat.icon}</div>
-                <div className="text-[11px] font-bold text-slate-900">{stat.value}</div>
-                <div className="text-[8px] text-slate-500 mt-0.5">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Workflow */}
-          <div className="text-[9px] font-medium text-slate-600 py-1.5 px-2 rounded" style={{ background: '#EEF2FF', border: '1px solid #DDD6FE' }}>
-            طلب → مراجعة → عروض → تنفيذ → تسليم
-          </div>
-
-          {/* Projects List */}
-          <div className="space-y-1.5">
-            {[
-              { title: 'تخصيص متجر سلة', status: 'قيد التنفيذ', color: '#6D5DFB' },
-              { title: 'تحسين SEO', status: 'عروض مستقبلة', color: '#16A34A' },
-              { title: 'صفحة هبوط', status: 'بانتظار المراجعة', color: '#D97706' },
-            ].map((project, i) => (
-              <div key={i} className="p-1.5 rounded text-[9px] flex items-center justify-between" style={{ background: '#F8FAFC', border: '1px solid #E5E7EB' }}>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-slate-900 truncate">{project.title}</div>
-                  <div className="text-slate-500 text-[8px] mt-0.5">{project.status}</div>
-                </div>
-                <div className="w-1.5 h-1.5 rounded-full ml-2 flex-shrink-0" style={{ background: project.color }} />
-              </div>
-            ))}
-          </div>
-
-          {/* Activity */}
-          <div className="border-t border-slate-100 pt-2 text-[8px]">
-            <div className="font-bold text-slate-600 mb-1">آخر نشاط</div>
-            <div className="space-y-1 text-slate-500">
-              <div>✓ تم إرسال عرض جديد</div>
-              <div>📝 تم تحديث حالة المشروع</div>
-              <div>📤 تم رفع تسليم جديد</div>
-            </div>
-          </div>
-        </div>
+/* محتوى لوحة الإدارة — النافذة الأمامية */
+function AdminPanel() {
+  return (
+    <WindowFrame title="لوحة الإدارة" primary>
+      <div className="flex items-center justify-between mb-2.5">
+        <h3 className="text-[13px] font-bold text-slate-900">متابعة المشاريع المفتوحة</h3>
+        <span className="text-[11px] font-semibold px-2 py-0.5 rounded" style={{ background: '#EEF2FF', color: '#6D5DFB' }}>بروز</span>
       </div>
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        {[
+          { label: 'طلبات للمراجعة', value: '3' },
+          { label: 'عروض قيد الجمع', value: '5' },
+          { label: 'مشاريع نشطة', value: '4' },
+        ].map((s, i) => (
+          <div key={i} className="rounded-lg px-2 py-2 text-center" style={{ background: '#F8FAFC', border: '1px solid #EEF2FF' }}>
+            <div className="text-[15px] font-bold text-slate-900 leading-none">{s.value}</div>
+            <div className="text-[11px] text-slate-500 mt-1">{s.label}</div>
+          </div>
+        ))}
+      </div>
+      <div className="space-y-1.5">
+        {[
+          { title: 'تخصيص متجر سلة', status: 'قيد التنفيذ', tone: 'green' as const },
+          { title: 'تحسين SEO', status: 'بانتظار عرض', tone: 'orange' as const },
+          { title: 'صفحة هبوط', status: 'تسليم للمراجعة', tone: 'purple' as const },
+        ].map((row, i) => (
+          <div key={i} className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-2" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+            <span className="text-[12px] font-semibold text-slate-800 truncate">{row.title}</span>
+            <StatusBadge label={row.status} tone={row.tone} />
+          </div>
+        ))}
+      </div>
+    </WindowFrame>
+  );
+}
+
+/* محتوى لوحة التاجر — خلفية أعلى اليمين */
+function MerchantPanel() {
+  return (
+    <WindowFrame title="لوحة التاجر">
+      <div className="flex items-center justify-between mb-2.5">
+        <h3 className="text-[13px] font-bold text-slate-900">طلباتي</h3>
+        <span className="text-[11px] font-semibold px-2 py-1 rounded-lg text-white" style={{ background: '#6D5DFB' }}>+ طلب جديد</span>
+      </div>
+      <div className="space-y-1.5">
+        {[
+          { title: 'عروض مستلمة', tone: 'purple' as const, badge: 'عرضان' },
+          { title: 'مشروع قيد التنفيذ', tone: 'green' as const, badge: 'نشط' },
+          { title: 'تسليم بانتظار الاعتماد', tone: 'orange' as const, badge: 'مراجعة' },
+        ].map((row, i) => (
+          <div key={i} className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-2" style={{ background: '#F8FAFC', border: '1px solid #E5E7EB' }}>
+            <span className="text-[12px] font-semibold text-slate-800 truncate">{row.title}</span>
+            <StatusBadge label={row.badge} tone={row.tone} />
+          </div>
+        ))}
+      </div>
+    </WindowFrame>
+  );
+}
+
+/* محتوى لوحة الخبير — خلفية أسفل اليسار */
+function ProviderPanel() {
+  return (
+    <WindowFrame title="لوحة الخبير">
+      <div className="flex items-center justify-between mb-2.5">
+        <h3 className="text-[13px] font-bold text-slate-900">فرصي ومشاريعي</h3>
+      </div>
+      <div className="space-y-1.5">
+        {[
+          { title: 'فرصة مدعو لها', tone: 'purple' as const, badge: 'دعوة' },
+          { title: 'عرض مرسل', tone: 'green' as const, badge: 'مُرسل' },
+          { title: 'تسليم مرفوع', tone: 'orange' as const, badge: 'بانتظار' },
+        ].map((row, i) => (
+          <div key={i} className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-2" style={{ background: '#F8FAFC', border: '1px solid #E5E7EB' }}>
+            <span className="text-[12px] font-semibold text-slate-800 truncate">{row.title}</span>
+            <StatusBadge label={row.badge} tone={row.tone} />
+          </div>
+        ))}
+      </div>
+    </WindowFrame>
+  );
+}
+
+/* الديسكتوب: ثلاث نوافذ متراكبة — الإدارة في الأمام، التاجر أعلى اليمين، الخبير أسفل اليسار */
+function LayeredDashboardStory() {
+  return (
+    <div className="relative hidden lg:block" style={{ width: 600, height: 460 }}>
+      {/* الخبير — خلف، أسفل اليسار */}
+      <div className="absolute" style={{ left: 0, bottom: 0, width: 300, zIndex: 10, transform: 'rotate(-3deg) scale(0.9)', transformOrigin: '0% 100%' }}>
+        <ProviderPanel />
+      </div>
+      {/* التاجر — خلف، أعلى اليمين */}
+      <div className="absolute" style={{ right: 0, top: 0, width: 300, zIndex: 20, transform: 'rotate(3deg) scale(0.9)', transformOrigin: '100% 0%' }}>
+        <MerchantPanel />
+      </div>
+      {/* الإدارة — في الأمام، الوسط */}
+      <div className="absolute" style={{ left: '50%', top: '50%', width: 372, zIndex: 30, transform: 'translate(-50%, -50%)' }}>
+        <AdminPanel />
+      </div>
+    </div>
+  );
+}
+
+/* الجوال: نافذة واحدة مختصرة مع تبويبات (افتراضي: الإدارة) — لا تراكب */
+function MobileDashboardStory() {
+  const [tab, setTab] = useState<'merchant' | 'admin' | 'provider'>('admin');
+  return (
+    <div className="lg:hidden w-full max-w-sm mx-auto">
+      <div className="flex gap-1.5 p-1 rounded-xl mb-3" style={{ background: '#F1F5F9' }}>
+        {[
+          { key: 'merchant' as const, label: 'التاجر' },
+          { key: 'admin' as const, label: 'الإدارة' },
+          { key: 'provider' as const, label: 'الخبير' },
+        ].map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            className="flex-1 py-2 text-[13px] font-semibold rounded-lg transition-colors"
+            style={tab === t.key ? { background: '#6D5DFB', color: '#FFFFFF' } : { color: '#475569' }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === 'merchant' && <MerchantPanel />}
+      {tab === 'admin' && <AdminPanel />}
+      {tab === 'provider' && <ProviderPanel />}
     </div>
   );
 }
@@ -332,9 +417,10 @@ function HeroSection() {
             </div>
           </div>
 
-          {/* Mac Mockup Column - Left */}
+          {/* Mockup Column - Left: Layered Product Story */}
           <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
-            <MacDashboardMockup />
+            <LayeredDashboardStory />
+            <MobileDashboardStory />
           </div>
         </div>
       </div>

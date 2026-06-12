@@ -283,7 +283,7 @@ export default function ProviderRegisterPage() {
             <Image src="/شعار%20بروز.svg" alt="بروز" width={100} height={32} className="h-8 w-auto object-contain brightness-0" />
           </div>
         </Link>
-        <Link href="/register" className="text-slate-500 hover:text-[#06B6D4] flex items-center gap-2">
+        <Link href="/register" className="text-slate-500 hover:text-[#6D5DFB] flex items-center gap-2">
           العودة
           <ArrowRight size={16} />
         </Link>
@@ -291,12 +291,12 @@ export default function ProviderRegisterPage() {
 
       {/* Main Container */}
       <div className="w-full max-w-4xl bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden mb-12">
-        <div className="bg-[#0B132B] p-8 text-center relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#06B6D4] opacity-20 rounded-full blur-3xl" />
+        <div className="p-8 text-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #6D5DFB 0%, #4F46E5 100%)' }}>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl" />
           <h1 className="text-3xl font-bold text-white mb-2 relative z-10">
             قدّم طلب الانضمام كمقدم خدمة في بروز
           </h1>
-          <p className="text-slate-300 relative z-10">
+          <p className="relative z-10" style={{ color: '#EEF2FF' }}>
             اختر المسارات أو الخدمات التي تقدمها، وأرفق نماذج من أعمالك لمراجعة طلبك.
           </p>
         </div>
@@ -312,15 +312,15 @@ export default function ProviderRegisterPage() {
               return (
                 <div key={idx} className="flex flex-col items-center gap-2 relative z-10 bg-slate-50 px-2 sm:px-4">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors ${
-                    isActive ? 'bg-[#06B6D4] border-[#06B6D4] text-white' : 
-                    isPast ? 'bg-[#0B132B] border-[#0B132B] text-white' : 
+                    isActive ? 'bg-[#6D5DFB] border-[#6D5DFB] text-white' :
+                    isPast ? 'bg-[#4F46E5] border-[#4F46E5] text-white' :
                     'bg-white border-slate-300 text-slate-400'
                   }`}>
                     {isPast ? <CheckCircle size={16} /> : stepNumber}
                   </div>
                   <span className={`text-xs sm:text-sm font-medium hidden sm:block ${
-                    isActive ? 'text-[#06B6D4]' : 
-                    isPast ? 'text-[#0B132B]' : 
+                    isActive ? 'text-[#6D5DFB]' :
+                    isPast ? 'text-[#4F46E5]' :
                     'text-slate-400'
                   }`}>
                     {stepLabel}
@@ -348,33 +348,33 @@ export default function ProviderRegisterPage() {
           {/* STEP 1 */}
           {currentStep === 1 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h2 className="text-2xl font-bold text-[#0B132B] mb-6">المعلومات الشخصية والحساب</h2>
+              <h2 className="text-2xl font-bold text-[#111827] mb-6">المعلومات الشخصية والحساب</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">الاسم الكامل *</label>
                   <div className="relative">
-                    <input type="text" name="name" placeholder="اسمك الكامل" value={formData.name} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
+                    <input type="text" name="name" placeholder="اسمك الكامل" value={formData.name} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#6D5DFB] text-slate-900" />
                     <UserCircle2 size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">البريد الإلكتروني *</label>
                   <div className="relative">
-                    <input type="email" name="email" placeholder="example@domain.com" value={formData.email} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
+                    <input type="email" name="email" placeholder="example@domain.com" value={formData.email} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#6D5DFB] text-slate-900" />
                     <Mail size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">كلمة المرور *</label>
                   <div className="relative">
-                    <input type="password" name="password" placeholder="••••••••" value={formData.password} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
+                    <input type="password" name="password" placeholder="••••••••" value={formData.password} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#6D5DFB] text-slate-900" />
                     <Lock size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">تأكيد كلمة المرور *</label>
                   <div className="relative">
-                    <input type="password" name="confirmPassword" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
+                    <input type="password" name="confirmPassword" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#6D5DFB] text-slate-900" />
                     <Lock size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
@@ -396,25 +396,25 @@ export default function ProviderRegisterPage() {
           {/* STEP 2 */}
           {currentStep === 2 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h2 className="text-2xl font-bold text-[#0B132B] mb-6">التخصص والخبرة</h2>
+              <h2 className="text-2xl font-bold text-[#111827] mb-6">التخصص والخبرة</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">المسمى المهني الأساسي *</label>
                   <div className="relative">
-                    <input type="text" name="specialtyTitle" placeholder="مثال: مطور متاجر سلة، أخصائي تسويق..." value={formData.specialtyTitle} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
+                    <input type="text" name="specialtyTitle" placeholder="مثال: مطور متاجر سلة، أخصائي تسويق..." value={formData.specialtyTitle} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#6D5DFB] text-slate-900" />
                     <Briefcase size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">سنوات الخبرة *</label>
                   <div className="relative">
-                    <input type="number" name="yearsOfExperience" placeholder="مثال: 3" min="0" value={formData.yearsOfExperience} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
+                    <input type="number" name="yearsOfExperience" placeholder="مثال: 3" min="0" value={formData.yearsOfExperience} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#6D5DFB] text-slate-900" />
                     <Briefcase size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-slate-700 mb-2">نبذة عنك (اختياري)</label>
-                  <textarea name="bio" placeholder="تحدث باختصار عن خبراتك ومهاراتك وما يميزك كمستقل..." value={formData.bio} onChange={handleChange} rows={4} className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
+                  <textarea name="bio" placeholder="تحدث باختصار عن خبراتك ومهاراتك وما يميزك كمستقل..." value={formData.bio} onChange={handleChange} rows={4} className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#6D5DFB] text-slate-900" />
                 </div>
               </div>
             </div>
@@ -424,8 +424,8 @@ export default function ProviderRegisterPage() {
           {currentStep === 3 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-2xl font-bold text-[#0B132B]">المسارات والخدمات</h2>
-                <span className="text-sm font-medium px-4 py-1.5 bg-[#06B6D4]/10 text-[#06B6D4] rounded-full">
+                <h2 className="text-2xl font-bold text-[#111827]">المسارات والخدمات</h2>
+                <span className="text-sm font-medium px-4 py-1.5 bg-[#6D5DFB]/10 text-[#6D5DFB] rounded-full">
                   تم تحديد ({selectedServices.length}) خدمة
                 </span>
               </div>
@@ -444,9 +444,9 @@ export default function ProviderRegisterPage() {
                         className="w-full px-5 py-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="font-bold text-lg text-[#0B132B]">{cat.nameAr}</span>
+                          <span className="font-bold text-lg text-[#111827]">{cat.nameAr}</span>
                           {selectedInCat > 0 && (
-                            <span className="text-xs font-semibold bg-[#06B6D4] text-white px-2.5 py-1 rounded-full">
+                            <span className="text-xs font-semibold bg-[#6D5DFB] text-white px-2.5 py-1 rounded-full">
                               {selectedInCat} محددة
                             </span>
                           )}
@@ -497,9 +497,9 @@ export default function ProviderRegisterPage() {
                                         onClick={() => toggleGroup(groupServiceIds)}
                                         className={`text-sm px-4 py-2 rounded-lg border transition-all flex items-center justify-center font-medium ${
                                           isAllSelected
-                                            ? 'bg-[#0B132B] text-white border-[#0B132B] hover:bg-slate-800'
+                                            ? 'bg-[#6D5DFB] text-white border-[#6D5DFB] hover:bg-[#4F46E5]'
                                             : isPartiallySelected
-                                              ? 'bg-[#06B6D4]/10 text-[#06B6D4] border-[#06B6D4]/30 hover:bg-[#06B6D4]/20'
+                                              ? 'bg-[#6D5DFB]/10 text-[#6D5DFB] border-[#6D5DFB]/30 hover:bg-[#6D5DFB]/20'
                                               : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
                                         }`}
                                       >
@@ -515,7 +515,7 @@ export default function ProviderRegisterPage() {
                                           key={srv.id}
                                           className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
                                             isSelected 
-                                              ? 'border-[#06B6D4] bg-[#06B6D4]/5 shadow-sm' 
+                                              ? 'border-[#6D5DFB] bg-[#6D5DFB]/5 shadow-sm' 
                                               : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50'
                                           }`}
                                         >
@@ -524,10 +524,10 @@ export default function ProviderRegisterPage() {
                                               type="checkbox"
                                               checked={isSelected}
                                               onChange={() => toggleService(srv.id)}
-                                              className="w-5 h-5 rounded text-[#06B6D4] focus:ring-[#06B6D4] border-slate-300 cursor-pointer"
+                                              className="w-5 h-5 rounded text-[#6D5DFB] focus:ring-[#6D5DFB] border-slate-300 cursor-pointer"
                                             />
                                           </div>
-                                          <span className={`text-sm leading-snug pt-0.5 ${isSelected ? 'font-bold text-[#0B132B]' : 'font-medium text-slate-700'}`}>
+                                          <span className={`text-sm leading-snug pt-0.5 ${isSelected ? 'font-bold text-[#111827]' : 'font-medium text-slate-700'}`}>
                                             {srv.nameAr}
                                           </span>
                                         </label>
@@ -550,7 +550,7 @@ export default function ProviderRegisterPage() {
           {/* STEP 4 */}
           {currentStep === 4 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h2 className="text-2xl font-bold text-[#0B132B] mb-2">الأعمال السابقة (إلزامي)</h2>
+              <h2 className="text-2xl font-bold text-[#111827] mb-2">الأعمال السابقة (إلزامي)</h2>
               <p className="text-slate-500 mb-6">
                 أضف عملًا سابقًا واحدًا على الأقل، أو رابط معرض أعمالك لمساعدة فريق بروز في مراجعة طلبك واعتمادك كمقدم خدمة.
               </p>
@@ -559,14 +559,14 @@ export default function ProviderRegisterPage() {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">رابط معرض الأعمال (Behance, Dribbble...)</label>
                   <div className="relative">
-                    <input type="url" name="portfolioUrl" placeholder="https://..." value={formData.portfolioUrl} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4]" />
+                    <input type="url" name="portfolioUrl" placeholder="https://..." value={formData.portfolioUrl} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#6D5DFB]" />
                     <LinkIcon size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">رابط حساب LinkedIn</label>
                   <div className="relative">
-                    <input type="url" name="linkedinUrl" placeholder="https://linkedin.com/in/..." value={formData.linkedinUrl} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4]" />
+                    <input type="url" name="linkedinUrl" placeholder="https://linkedin.com/in/..." value={formData.linkedinUrl} onChange={handleChange} className="w-full has-icon bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#6D5DFB]" />
                     <LinkIcon size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
@@ -575,14 +575,14 @@ export default function ProviderRegisterPage() {
               {/* Added Portfolio Items List */}
               {portfolioItems.length > 0 && (
                 <div className="mb-8 space-y-4">
-                  <h3 className="text-lg font-bold text-[#0B132B]">الأعمال المضافة ({portfolioItems.length}):</h3>
+                  <h3 className="text-lg font-bold text-[#111827]">الأعمال المضافة ({portfolioItems.length}):</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {portfolioItems.map((item, index) => (
                       <div key={index} className="flex flex-col bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative">
                         <button type="button" onClick={() => removePortfolioItem(index)} className="absolute top-4 left-4 text-slate-400 hover:text-red-500 transition-colors p-1">
                           <Trash2 size={18} />
                         </button>
-                        <h4 className="font-bold text-[#0B132B] mb-1 pr-6">{item.title}</h4>
+                        <h4 className="font-bold text-[#111827] mb-1 pr-6">{item.title}</h4>
                         <p className="text-sm text-slate-500 mb-3">{item.description}</p>
                         {item.serviceId && (
                           <div className="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-md self-start mb-3 font-medium">
@@ -590,7 +590,7 @@ export default function ProviderRegisterPage() {
                           </div>
                         )}
                         {item.projectUrl && (
-                          <a href={item.projectUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-[#06B6D4] hover:text-[#0B132B] flex items-center gap-1 mt-auto">
+                          <a href={item.projectUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-[#6D5DFB] hover:text-[#111827] flex items-center gap-1 mt-auto">
                             <LinkIcon size={14} /> عرض المشروع
                           </a>
                         )}
@@ -602,24 +602,24 @@ export default function ProviderRegisterPage() {
 
               {/* Add New Portfolio Item Form */}
               <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                <h3 className="text-lg font-bold text-[#0B132B] mb-4">إضافة عمل سابق جديد</h3>
+                <h3 className="text-lg font-bold text-[#111827] mb-4">إضافة عمل سابق جديد</h3>
                 <p className="text-sm text-slate-500 mb-5">اربط كل عمل سابق بالخدمة الأقرب له حتى نتمكن من مراجعة خبرتك بدقة.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-1">عنوان العمل *</label>
-                    <input type="text" placeholder="مثال: تصميم متجر إلكتروني لمطعم" value={newItem.title} onChange={(e) => setNewItem({ ...newItem, title: e.target.value })} className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4]" />
+                    <input type="text" placeholder="مثال: تصميم متجر إلكتروني لمطعم" value={newItem.title} onChange={(e) => setNewItem({ ...newItem, title: e.target.value })} className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#6D5DFB]" />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-1">وصف العمل *</label>
-                    <textarea placeholder="وصف مختصر لدورك وما أنجزته في هذا العمل..." value={newItem.description} onChange={(e) => setNewItem({ ...newItem, description: e.target.value })} rows={3} className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4]" />
+                    <textarea placeholder="وصف مختصر لدورك وما أنجزته في هذا العمل..." value={newItem.description} onChange={(e) => setNewItem({ ...newItem, description: e.target.value })} rows={3} className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#6D5DFB]" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">رابط المشروع (اختياري)</label>
-                    <input type="url" placeholder="https://..." value={newItem.projectUrl} onChange={(e) => setNewItem({ ...newItem, projectUrl: e.target.value })} className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4]" />
+                    <input type="url" placeholder="https://..." value={newItem.projectUrl} onChange={(e) => setNewItem({ ...newItem, projectUrl: e.target.value })} className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#6D5DFB]" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">الخدمة المرتبطة (اختياري)</label>
-                    <select value={newItem.serviceId} onChange={(e) => setNewItem({ ...newItem, serviceId: e.target.value })} className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4]">
+                    <select value={newItem.serviceId} onChange={(e) => setNewItem({ ...newItem, serviceId: e.target.value })} className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#6D5DFB]">
                       <option value="">اختر خدمة لربطها بهذا العمل</option>
                       {selectedServices.map(id => (
                         <option key={id} value={id}>{getServiceName(id)}</option>
@@ -628,7 +628,7 @@ export default function ProviderRegisterPage() {
                   </div>
                 </div>
                 <div className="mt-5 flex justify-end">
-                  <button type="button" onClick={addPortfolioItem} disabled={!newItem.title || !newItem.description} className="flex items-center gap-2 bg-[#0B132B] text-white px-6 py-2.5 rounded-xl font-bold hover:bg-slate-800 disabled:opacity-50 transition-colors">
+                  <button type="button" onClick={addPortfolioItem} disabled={!newItem.title || !newItem.description} className="flex items-center gap-2 bg-[#6D5DFB] text-white px-6 py-2.5 rounded-xl font-bold hover:bg-[#4F46E5] disabled:opacity-50 transition-colors">
                     <Plus size={18} />
                     إضافة إلى طلبك
                   </button>
@@ -641,10 +641,10 @@ export default function ProviderRegisterPage() {
           {currentStep === 5 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-[#06B6D4]/10 text-[#06B6D4] rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-[#6D5DFB]/10 text-[#6D5DFB] rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle size={32} />
                 </div>
-                <h2 className="text-2xl font-bold text-[#0B132B] mb-2">المراجعة والإرسال</h2>
+                <h2 className="text-2xl font-bold text-[#111827] mb-2">المراجعة والإرسال</h2>
                 <p className="text-slate-500">راجع ملخص طلبك قبل الإرسال النهائي لفريق بروز.</p>
               </div>
 
@@ -652,19 +652,19 @@ export default function ProviderRegisterPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pb-6 border-b border-slate-200">
                   <div>
                     <span className="block text-sm text-slate-500 mb-1">الاسم الكامل</span>
-                    <strong className="text-[#0B132B]">{formData.name}</strong>
+                    <strong className="text-[#111827]">{formData.name}</strong>
                   </div>
                   <div>
                     <span className="block text-sm text-slate-500 mb-1">البريد الإلكتروني</span>
-                    <strong className="text-[#0B132B] truncate block" title={formData.email}>{formData.email}</strong>
+                    <strong className="text-[#111827] truncate block" title={formData.email}>{formData.email}</strong>
                   </div>
                   <div>
                     <span className="block text-sm text-slate-500 mb-1">المجال المهني</span>
-                    <strong className="text-[#0B132B]">{formData.specialtyTitle}</strong>
+                    <strong className="text-[#111827]">{formData.specialtyTitle}</strong>
                   </div>
                   <div>
                     <span className="block text-sm text-slate-500 mb-1">سنوات الخبرة</span>
-                    <strong className="text-[#0B132B]">{formData.yearsOfExperience} سنوات</strong>
+                    <strong className="text-[#111827]">{formData.yearsOfExperience} سنوات</strong>
                   </div>
                 </div>
 
@@ -688,18 +688,18 @@ export default function ProviderRegisterPage() {
                     <span className="block text-sm text-slate-500 mb-3">معرض الأعمال ({portfolioItems.length})</span>
                     <div className="space-y-2">
                       {formData.portfolioUrl && (
-                        <a href={formData.portfolioUrl} target="_blank" rel="noreferrer" className="text-sm flex items-center gap-2 text-[#06B6D4] hover:underline">
+                        <a href={formData.portfolioUrl} target="_blank" rel="noreferrer" className="text-sm flex items-center gap-2 text-[#6D5DFB] hover:underline">
                           <LinkIcon size={14} /> رابط معرض الأعمال
                         </a>
                       )}
                       {formData.linkedinUrl && (
-                        <a href={formData.linkedinUrl} target="_blank" rel="noreferrer" className="text-sm flex items-center gap-2 text-[#06B6D4] hover:underline">
+                        <a href={formData.linkedinUrl} target="_blank" rel="noreferrer" className="text-sm flex items-center gap-2 text-[#6D5DFB] hover:underline">
                           <LinkIcon size={14} /> حساب LinkedIn
                         </a>
                       )}
                       {portfolioItems.slice(0, 3).map((p, i) => (
                         <div key={i} className="text-sm text-slate-700 flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-[#0B132B]"></div> {p.title}
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#6D5DFB]"></div> {p.title}
                         </div>
                       ))}
                     </div>
@@ -707,15 +707,15 @@ export default function ProviderRegisterPage() {
                 </div>
 
                 {/* Terms Agreement */}
-                <label className="flex items-start gap-3 cursor-pointer p-5 bg-white rounded-xl border border-slate-200 shadow-sm hover:border-[#06B6D4] transition-colors">
-                  <input type="checkbox" name="agreeTerms" checked={formData.agreeTerms} onChange={handleChange} className="w-5 h-5 rounded border-slate-300 mt-0.5 text-[#06B6D4] focus:ring-[#06B6D4]" />
+                <label className="flex items-start gap-3 cursor-pointer p-5 bg-white rounded-xl border border-slate-200 shadow-sm hover:border-[#6D5DFB] transition-colors">
+                  <input type="checkbox" name="agreeTerms" checked={formData.agreeTerms} onChange={handleChange} className="w-5 h-5 rounded border-slate-300 mt-0.5 text-[#6D5DFB] focus:ring-[#6D5DFB]" />
                   <span className="text-sm text-slate-700 font-medium leading-relaxed">
                     أتعهد بصحة المعلومات والأعمال المقدمة، وأوافق على{' '}
-                    <Link href="/terms" className="text-[#06B6D4] font-bold hover:underline" target="_blank">
+                    <Link href="/terms" className="text-[#6D5DFB] font-bold hover:underline" target="_blank">
                       شروط الخدمة
                     </Link>{' '}
                     و{' '}
-                    <Link href="/privacy" className="text-[#06B6D4] font-bold hover:underline" target="_blank">
+                    <Link href="/privacy" className="text-[#6D5DFB] font-bold hover:underline" target="_blank">
                       سياسة الخصوصية
                     </Link>
                     {' '}الخاصة بمنصة بروز، وأقر بأن حسابي سيخضع للمراجعة من قبل الإدارة.
@@ -728,19 +728,19 @@ export default function ProviderRegisterPage() {
           {/* Navigation Controls */}
           <div className="mt-10 flex items-center justify-between pt-6 border-t border-slate-200">
             {currentStep > 1 ? (
-              <button type="button" onClick={handlePrev} className="flex items-center gap-2 text-slate-600 font-bold hover:text-[#0B132B] px-6 py-3 rounded-xl transition-colors hover:bg-slate-100">
+              <button type="button" onClick={handlePrev} className="flex items-center gap-2 text-slate-600 font-bold hover:text-[#111827] px-6 py-3 rounded-xl transition-colors hover:bg-slate-100">
                 <ArrowRight size={20} />
                 السابق
               </button>
             ) : <div></div>}
 
             {currentStep < totalSteps ? (
-              <button type="button" onClick={handleNext} className="flex items-center gap-2 bg-[#0B132B] text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-md">
+              <button type="button" onClick={handleNext} className="flex items-center gap-2 bg-[#6D5DFB] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#4F46E5] transition-all shadow-md">
                 التالي
                 <ArrowLeft size={20} />
               </button>
             ) : (
-              <button type="button" onClick={handleSubmit} disabled={isLoading || !formData.agreeTerms} className="flex items-center gap-2 bg-[#06B6D4] text-white px-10 py-3 rounded-xl font-bold hover:bg-cyan-600 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-lg">
+              <button type="button" onClick={handleSubmit} disabled={isLoading || !formData.agreeTerms} className="flex items-center gap-2 bg-[#6D5DFB] text-white px-10 py-3 rounded-xl font-bold hover:bg-[#4F46E5] transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-lg">
                 {isLoading ? 'جاري الإرسال...' : 'إرسال طلب المراجعة'}
               </button>
             )}
@@ -749,7 +749,7 @@ export default function ProviderRegisterPage() {
           {currentStep === 1 && (
             <p className="text-center text-slate-500 mt-8">
               لديك حساب بالفعل؟{' '}
-              <Link href="/login" className="text-[#0B132B] font-bold hover:underline">
+              <Link href="/login" className="text-[#111827] font-bold hover:underline">
                 تسجيل الدخول
               </Link>
             </p>

@@ -94,34 +94,34 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-navy via-[#06B6D4]/30 to-primary-navy flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
       {/* Background decorative elements */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-[#06B6D4] opacity-10 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-primary-navy opacity-10 rounded-full blur-3xl" />
+      <div className="absolute top-0 left-0 w-96 h-96 bg-[#6D5DFB] opacity-[0.06] rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#6D5DFB] opacity-[0.05] rounded-full blur-3xl pointer-events-none" />
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <Image src="/شعار%20بروز.svg" alt="بروز" width={100} height={40} className="h-10 w-auto object-contain brightness-0 invert" />
+            <Image src="/شعار%20بروز.svg" alt="بروز" width={100} height={40} className="h-10 w-auto object-contain" />
           </div>
-          <p className="text-slate-300 text-sm">منصة خدمات وخبراء متاجر سلة</p>
+          <p className="text-slate-500 text-sm">منصة خدمات وخبراء متاجر سلة</p>
         </div>
 
         {/* Form Container */}
-        <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8">
+        <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-2xl font-bold text-white mb-2 text-right">
+              <h1 className="text-2xl font-bold text-slate-900 mb-2 text-right">
                 تسجيل متجر سلة
               </h1>
-              <p className="text-slate-400 text-right text-sm">
+              <p className="text-slate-500 text-right text-sm">
                 ابدأ رحلتك مع منصة BOROZ اليوم
               </p>
             </div>
-            <Link href="/register" className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-slate-300">
+            <Link href="/register" className="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-slate-600">
               <ArrowRight size={20} />
             </Link>
           </div>
@@ -145,7 +145,7 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2 text-right">
+              <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
                 الاسم الكامل
               </label>
               <div className="relative">
@@ -155,7 +155,7 @@ export default function RegisterPage() {
                   placeholder="اسمك الكامل"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-500"
                   required
                 />
                 <Store size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -163,7 +163,7 @@ export default function RegisterPage() {
             </div>
             {/* Store Name */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2 text-right">
+              <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
                 اسم المتجر
               </label>
               <div className="relative">
@@ -173,7 +173,7 @@ export default function RegisterPage() {
                   placeholder="اسم متجرك على سلة"
                   value={formData.storeName}
                   onChange={handleChange}
-                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-500"
                   required
                 />
                 <Store size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -182,7 +182,7 @@ export default function RegisterPage() {
 
             {/* Store URL */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2 text-right">
+              <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
                 رابط المتجر
               </label>
               <div className="relative">
@@ -192,7 +192,7 @@ export default function RegisterPage() {
                   placeholder="https://salla.sa/yourstore"
                   value={formData.storeUrl}
                   onChange={handleChange}
-                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-500"
                   required
                 />
                 <Store size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -201,7 +201,7 @@ export default function RegisterPage() {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2 text-right">
+              <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
                 البريد الإلكتروني
               </label>
               <div className="relative">
@@ -211,7 +211,7 @@ export default function RegisterPage() {
                   placeholder="example@domain.com"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-500"
                   required
                 />
                 <Mail size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -220,7 +220,7 @@ export default function RegisterPage() {
 
             {/* Phone */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2 text-right">
+              <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
                 رقم الجوال
               </label>
               <PhoneInput
@@ -235,7 +235,7 @@ export default function RegisterPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2 text-right">
+              <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
                 كلمة المرور
               </label>
               <div className="relative">
@@ -245,7 +245,7 @@ export default function RegisterPage() {
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-500"
                   required
                 />
                 <Lock size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -254,7 +254,7 @@ export default function RegisterPage() {
 
             {/* Confirm Password */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2 text-right">
+              <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
                 تأكيد كلمة المرور
               </label>
               <div className="relative">
@@ -264,7 +264,7 @@ export default function RegisterPage() {
                   placeholder="••••••••"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-500"
                   required
                 />
                 <Lock size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -274,13 +274,13 @@ export default function RegisterPage() {
             {/* Terms Agreement */}
             <label className="flex items-start gap-2 cursor-pointer">
               <input type="checkbox" className="w-4 h-4 rounded border-slate-300 mt-1" required />
-              <span className="text-sm text-slate-400 text-right flex-1">
+              <span className="text-sm text-slate-500 text-right flex-1">
                 أوافق على{' '}
-                <Link href="/terms" className="text-[#06B6D4] hover:underline">
+                <Link href="/terms" className="text-[#6D5DFB] hover:underline">
                   شروط الخدمة
                 </Link>{' '}
                 و
-                <Link href="/privacy" className="text-[#06B6D4] hover:underline">
+                <Link href="/privacy" className="text-[#6D5DFB] hover:underline">
                   سياسة الخصوصية
                 </Link>
               </span>
@@ -290,22 +290,22 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#06B6D4] hover:bg-[#0891B2] disabled:bg-slate-400 text-white font-semibold py-2.5 rounded-lg transition-colors"
+              className="w-full bg-[#6D5DFB] hover:bg-[#4F46E5] disabled:bg-slate-400 text-white font-semibold py-2.5 rounded-xl transition-colors"
             >
               {isLoading ? 'جاري الإنشاء...' : 'إنشاء الحساب'}
             </button>
           </form>
 
           {/* Footer Link */}
-          <p className="text-center text-slate-400 text-sm mt-6">
+          <p className="text-center text-slate-500 text-sm mt-6">
             لديك حساب بالفعل؟{' '}
-            <Link href="/login" className="text-[#06B6D4] font-semibold hover:underline">
+            <Link href="/login" className="text-[#6D5DFB] font-semibold hover:underline">
               تسجيل الدخول
             </Link>
           </p>
         </div>
 
-        <p className="text-center text-slate-400 text-xs mt-6">
+        <p className="text-center text-slate-500 text-xs mt-6">
           © 2024 BOROZ | بروز. جميع الحقوق محفوظة.
         </p>
       </div>
