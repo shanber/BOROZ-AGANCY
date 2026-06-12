@@ -42,7 +42,7 @@
   --shadow-none: none;
 
   /* Fonts */
-  --font-ar: 'Tajawal', 'Cairo', 'IBM Plex Sans Arabic', 'Segoe UI', sans-serif;
+  --font-ar: 'IBM Plex Sans Arabic', 'system-ui', sans-serif;
   --font-num: 'Inter', 'system-ui', sans-serif;
 }
 
