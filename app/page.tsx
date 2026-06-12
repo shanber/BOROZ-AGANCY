@@ -170,90 +170,138 @@ function Navbar() {
   );
 }
 
+/* ─── Mac Dashboard Mockup ─── */
+
+function MacDashboardMockup() {
+  return (
+    <div className="relative h-[460px] rounded-3xl overflow-hidden shadow-lg" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+      {/* Mac Title Bar */}
+      <div className="h-12 bg-slate-50 border-b border-slate-200 flex items-center px-4 gap-3" style={{ background: '#F8FAFC' }}>
+        <div className="flex gap-2">
+          <div className="w-3 h-3 rounded-full" style={{ background: '#FF5F56' }} />
+          <div className="w-3 h-3 rounded-full" style={{ background: '#FFBD2E' }} />
+          <div className="w-3 h-3 rounded-full" style={{ background: '#27C93F' }} />
+        </div>
+        <span className="text-xs font-medium text-slate-600 flex-1 text-center">لوحة بروز</span>
+        <div className="w-12" />
+      </div>
+
+      {/* Dashboard Content */}
+      <div className="flex h-[calc(100%-48px)] overflow-hidden">
+        {/* Sidebar */}
+        <div className="w-48 bg-white border-r border-slate-200 p-4 space-y-2 overflow-y-auto">
+          <div className="px-3 py-2 rounded-lg font-semibold text-xs text-slate-600 mb-4">لوحة التحكم</div>
+          {['لوحة التحكم', 'الطلبات', 'العروض', 'المشاريع', 'الرسائل'].map((item, i) => (
+            <div key={i} className={`px-3 py-2.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
+              i === 0 ? 'bg-purple-50 text-purple-700' : 'text-slate-600 hover:bg-slate-50'
+            }`} style={i === 0 ? { background: '#EEF2FF', color: '#6D5DFB' } : {}}>
+              {item}
+            </div>
+          ))}
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 bg-white overflow-y-auto">
+          <div className="p-6 space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">مرحبًا، تاجر بروز</h3>
+                <p className="text-xs text-slate-500 mt-1">الطلبات والعروض والمشاريع في مكان واحد</p>
+              </div>
+              <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ background: '#6D5DFB', color: '#FFFFFF' }}>
+                + طلب جديد
+              </button>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              {[
+                { label: 'الطلبات قيد المراجعة', value: '2', icon: '📋' },
+                { label: 'العروض المستلمة', value: '4', icon: '💼' },
+                { label: 'المشاريع قيد التنفيذ', value: '1', icon: '⚙️' },
+              ].map((stat, i) => (
+                <div key={i} className="p-2.5 rounded-lg" style={{ background: '#F8FAFC', border: '1px solid #E5E7EB' }}>
+                  <div className="text-lg mb-1">{stat.icon}</div>
+                  <div className="text-xl font-bold text-slate-900">{stat.value}</div>
+                  <div className="text-[10px] text-slate-500 mt-1">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Projects List */}
+            <div className="space-y-2">
+              {[
+                { title: 'تخصيص واجهة متجر سلة', status: 'قيد التنفيذ', badge: '🔄' },
+                { title: 'تحسين SEO', status: 'بانتظار العروض', badge: '⏳' },
+                { title: 'صفحة هبوط', status: 'تم التسليم', badge: '✓' },
+              ].map((project, i) => (
+                <div key={i} className="p-2.5 rounded-lg flex items-center justify-between text-[10px]" style={{ background: '#F8FAFC', border: '1px solid #E5E7EB' }}>
+                  <div className="flex-1">
+                    <div className="font-semibold text-slate-900">{project.title}</div>
+                    <div className="text-slate-500 mt-0.5">{project.status}</div>
+                  </div>
+                  <span className="text-lg">{project.badge}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Hero Section ─── */
 
 function HeroSection() {
   return (
-    <section className="pt-32 pb-16 md:pt-40 md:pb-20" style={{ background: '#F8FAFC' }}>
-      <div className="container-xl">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+    <section className="relative pt-32 pb-24 md:pt-44 md:pb-32 overflow-hidden" style={{ background: '#FFFFFF' }}>
+      {/* Soft Purple Halo */}
+      <div className="absolute top-32 left-1/3 w-96 h-96 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: '#6D5DFB' }} />
+
+      <div className="container-xl relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-8 lg:gap-12 items-center">
           {/* Text Column */}
-          <div className="space-y-7 max-w-xl">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight mb-4">
+          <div className="space-y-8 max-w-2xl order-2 lg:order-1">
+            <div className="space-y-6">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight" style={{ color: '#111827' }}>
                 طوّر متجرك بدون فوضى البحث والمتابعة
               </h1>
-              <p className="text-lg text-slate-600 leading-relaxed">
+              <p className="text-lg md:text-xl leading-relaxed" style={{ color: '#475569' }}>
                 بروز منصة تدير طلبات تطوير المتاجر من رفع الطلب إلى مراجعة العروض، اختيار الخبير، متابعة التنفيذ، واستلام العمل من مكان واحد.
               </p>
             </div>
 
-            <div className="space-y-3 text-sm leading-relaxed text-slate-700">
+            <div className="space-y-4">
               {[
                 'طلب واضح من البداية',
                 'عروض من خبراء معتمدين',
                 'متابعة منظمة حتى التسليم',
               ].map((line, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0">
+                <div key={i} className="flex items-center gap-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#6D5DFB" strokeWidth="3" strokeLinecap="round" className="w-6 h-6 flex-shrink-0">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
-                  <span>{line}</span>
+                  <span className="text-base font-medium" style={{ color: '#111827' }}>{line}</span>
                 </div>
               ))}
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
-              <Link href="/register" className="btn-primary text-base px-8 py-3 w-full sm:w-auto text-center">
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <Link href="/register" className="btn-primary text-base px-8 py-4 text-center font-semibold rounded-xl" style={{ background: '#6D5DFB', color: '#FFFFFF' }}>
                 ابدأ طلبك الآن
               </Link>
-              <a href="#how-it-works"
-                className="inline-flex items-center gap-2 text-sm font-medium px-6 py-3 rounded-lg w-full sm:w-auto justify-center border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
-              >
-                استكشف طريقة العمل
+              <a href="#how-it-works" className="inline-flex items-center justify-center gap-2 text-base font-semibold px-8 py-4 rounded-xl transition-colors" style={{ border: '2px solid #E5E7EB', color: '#111827', background: '#FFFFFF' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'} onMouseLeave={(e) => e.currentTarget.style.background = '#FFFFFF'}>
+                شاهد طريقة العمل
                 <ArrowDownIcon />
               </a>
             </div>
           </div>
 
-          {/* Visual Column */}
-          <div className="relative">
-            <div className="rounded-xl overflow-hidden shadow-sm border border-slate-200" style={{ background: '#FFFFFF' }}>
-              <div className="p-8 space-y-4">
-                <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-                  <span className="text-sm font-semibold text-slate-900">خطوات طلبك</span>
-                  <span className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-700 font-medium">جديد</span>
-                </div>
-
-                <div className="space-y-3">
-                  {[
-                    { label: 'ارفع طلبك', done: true },
-                    { label: 'مراجعة الطلب', done: true },
-                    { label: 'استقبال العروض', done: true },
-                    { label: 'اختيار العرض', done: false },
-                    { label: 'التنفيذ والمتابعة', done: false },
-                    { label: 'التسليم', done: false },
-                  ].map((step, i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        step.done ? 'bg-green-100' : 'bg-slate-100'
-                      }`}>
-                        {step.done ? (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round" className="w-4 h-4">
-                            <polyline points="20 6 9 17 4 12"/>
-                          </svg>
-                        ) : (
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                        )}
-                      </div>
-                      <span className={`text-sm ${step.done ? 'text-slate-700 font-medium' : 'text-slate-500'}`}>
-                        {step.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+          {/* Mac Mockup Column */}
+          <div className="order-1 lg:order-2">
+            <MacDashboardMockup />
           </div>
         </div>
       </div>

@@ -10,11 +10,16 @@ const config = {
           900: '#0F172A',
           800: '#1E3A8A',
         },
-        blue: {
-          600: '#2563EB',
+        purple: {
+          primary: '#6D5DFB',
+          deep: '#4F46E5',
+          soft: '#EEF2FF',
+          border: '#DDD6FE',
         },
         bg: {
-          primary: '#F8FAFC',
+          primary: '#FFFFFF',
+          soft: '#F8FAFC',
+          section: '#F5F3FF',
           card: '#FFFFFF',
           subtle: '#F1F5F9',
         },
@@ -24,14 +29,15 @@ const config = {
           tertiary: '#64748B',
         },
         border: {
-          DEFAULT: '#E2E8F0',
+          DEFAULT: '#E5E7EB',
           light: '#CBD5E1',
+          purple: '#DDD6FE',
         },
         status: {
           success: '#16A34A',
           warning: '#D97706',
           danger: '#DC2626',
-          info: '#2563EB',
+          info: '#6D5DFB',
         },
       },
       textColor: {
