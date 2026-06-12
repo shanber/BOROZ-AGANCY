@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Mail, Phone, Lock, Store, CheckCircle, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Store, CheckCircle, ArrowRight } from 'lucide-react';
+import PhoneInput from '@/app/components/ui/PhoneInput';
+import { getCountryByCode, normalizePhoneNumber } from '@/app/lib/phone';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -13,10 +15,11 @@ export default function RegisterPage() {
     storeName: '',
     storeUrl: '',
     email: '',
-    phone: '',
     password: '',
     confirmPassword: '',
   });
+  const [countryCode, setCountryCode] = useState('SA');
+  const [localPhone, setLocalPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -42,7 +45,9 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.phone.length < 10) {
+    const dialCode = getCountryByCode(countryCode).dialCode;
+    const normalizedPhone = normalizePhoneNumber(dialCode, localPhone);
+    if (!normalizedPhone) {
       setError('رقم الجوال غير صحيح');
       return;
     }
@@ -62,7 +67,7 @@ export default function RegisterPage() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          phone: formData.phone,
+          phone: normalizedPhone,
           storeName: formData.storeName,
           storeUrl: formData.storeUrl,
         }),
@@ -218,18 +223,14 @@ export default function RegisterPage() {
               <label className="block text-sm font-medium text-slate-300 mb-2 text-right">
                 رقم الجوال
               </label>
-              <div className="relative">
-                <input
-                  type="tel"
-                  name="phone"
-                  placeholder="+966501234567"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 pr-10 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
-                  required
-                />
-                <Phone size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
-              </div>
+              <PhoneInput
+                countryCode={countryCode}
+                onCountryChange={setCountryCode}
+                value={localPhone}
+                onChange={setLocalPhone}
+                placeholder="5xxxxxxxx"
+                required
+              />
             </div>
 
             {/* Password */}

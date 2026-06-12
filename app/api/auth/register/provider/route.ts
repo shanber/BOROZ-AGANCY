@@ -1,14 +1,25 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '@/app/lib/prisma';
+import { normalizeToE164 } from '@/app/lib/phone';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, email, password, portfolioUrl, bio, specialtyTitle, yearsOfExperience, linkedinUrl, services, portfolioItems } = body;
+    const { name, email, password, phone, portfolioUrl, bio, specialtyTitle, yearsOfExperience, linkedinUrl, services, portfolioItems } = body;
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: 'الرجاء تعبئة جميع الحقول المطلوبة' }, { status: 400 });
+    }
+
+    // Phone is optional for providers; normalize to E.164 when provided
+    let normalizedPhone = '';
+    if (phone && String(phone).trim()) {
+      const e164 = normalizeToE164(String(phone));
+      if (!e164) {
+        return NextResponse.json({ error: 'رقم الجوال غير صحيح' }, { status: 400 });
+      }
+      normalizedPhone = e164;
     }
 
     if (!services || !Array.isArray(services) || services.length === 0) {
@@ -42,6 +53,7 @@ export async function POST(req: Request) {
           name,
           email,
           password: hashedPassword,
+          phone: normalizedPhone,
           globalRole: 'PROVIDER',
         },
       });

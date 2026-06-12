@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import prisma from './prisma';
+import { isLikelyEmail, isLikelyPhone, normalizeToE164, phoneSearchVariants } from './phone';
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -9,43 +10,67 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
+        identifier: { label: 'البريد الإلكتروني أو رقم الجوال', type: 'text' },
         email: { label: 'البريد الإلكتروني', type: 'email' },
         password: { label: 'كلمة المرور', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('الرجاء إدخال البريد الإلكتروني وكلمة المرور');
+        const identifier = (credentials?.identifier || credentials?.email || '').trim();
+
+        if (!credentials?.password) {
+          throw new Error('كلمة المرور مطلوبة');
+        }
+        if (!identifier) {
+          throw new Error('الرجاء إدخال البريد الإلكتروني أو رقم الجوال');
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-          include: {
-            expertProfile: true,
-            orgMembers: {
-              where: { isActive: true },
-              take: 1,
-              include: {
-                organization: {
-                  include: {
-                    merchants: {
-                      where: { deletedAt: null },
-                      take: 1,
-                    },
+        const userInclude = {
+          expertProfile: true,
+          orgMembers: {
+            where: { isActive: true },
+            take: 1,
+            include: {
+              organization: {
+                include: {
+                  merchants: {
+                    where: { deletedAt: null },
+                    take: 1,
                   },
                 },
               },
             },
           },
-        });
+        } as const;
+
+        let user = null;
+
+        if (isLikelyEmail(identifier)) {
+          user = await prisma.user.findUnique({
+            where: { email: identifier },
+            include: userInclude,
+          });
+        } else if (isLikelyPhone(identifier)) {
+          const e164 = normalizeToE164(identifier);
+          if (!e164) {
+            // Generic message: never reveal whether a number exists
+            throw new Error('بيانات الدخول غير صحيحة');
+          }
+          user = await prisma.user.findFirst({
+            where: { phone: { in: phoneSearchVariants(e164) } },
+            orderBy: { createdAt: 'asc' },
+            include: userInclude,
+          });
+        }
 
         if (!user) {
-          throw new Error('لم يتم العثور على حساب بهذا البريد الإلكتروني');
+          // Same message for unknown email/phone and wrong password
+          throw new Error('بيانات الدخول غير صحيحة');
         }
 
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
 
         if (!isPasswordValid) {
-          throw new Error('كلمة المرور غير صحيحة');
+          throw new Error('بيانات الدخول غير صحيحة');
         }
 
         if (!user.isActive) {

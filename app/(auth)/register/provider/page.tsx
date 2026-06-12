@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Mail, Lock, UserCircle2, Briefcase, Link as LinkIcon, CheckCircle, ArrowRight, ArrowLeft, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
+import PhoneInput from '@/app/components/ui/PhoneInput';
+import { getCountryByCode, normalizePhoneNumber } from '@/app/lib/phone';
 
 interface Service {
   id: string;
@@ -75,6 +77,9 @@ export default function ProviderRegisterPage() {
     bio: '',
     agreeTerms: false,
   });
+
+  const [countryCode, setCountryCode] = useState('SA');
+  const [localPhone, setLocalPhone] = useState('');
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
@@ -164,6 +169,14 @@ export default function ProviderRegisterPage() {
         setError('كلمات المرور غير متطابقة.');
         return;
       }
+      // Phone is optional; validate only when provided
+      if (localPhone.trim()) {
+        const dialCode = getCountryByCode(countryCode).dialCode;
+        if (!normalizePhoneNumber(dialCode, localPhone)) {
+          setError('رقم الجوال غير صحيح.');
+          return;
+        }
+      }
     } else if (currentStep === 2) {
       if (!formData.specialtyTitle || !formData.yearsOfExperience) {
         setError('يرجى تعبئة كافة الحقول المطلوبة.');
@@ -211,6 +224,9 @@ export default function ProviderRegisterPage() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
+          phone: localPhone.trim()
+            ? normalizePhoneNumber(getCountryByCode(countryCode).dialCode, localPhone)
+            : '',
           portfolioUrl: formData.portfolioUrl,
           linkedinUrl: formData.linkedinUrl,
           specialtyTitle: formData.specialtyTitle,
@@ -361,6 +377,17 @@ export default function ProviderRegisterPage() {
                     <input type="password" name="confirmPassword" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} className="w-full px-4 py-3 pr-11 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#06B6D4] text-slate-900" />
                     <Lock size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   </div>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">رقم الجوال (اختياري)</label>
+                  <PhoneInput
+                    countryCode={countryCode}
+                    onCountryChange={setCountryCode}
+                    value={localPhone}
+                    onChange={setLocalPhone}
+                    placeholder="5xxxxxxxx"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">يمكنك استخدامه لتسجيل الدخول لاحقًا.</p>
                 </div>
               </div>
             </div>

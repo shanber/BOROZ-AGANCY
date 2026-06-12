@@ -6,10 +6,17 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { signIn } from 'next-auth/react';
 import { Mail, Lock, CheckCircle } from 'lucide-react';
+import PhoneInput from '@/app/components/ui/PhoneInput';
+import { getCountryByCode, normalizePhoneNumber } from '@/app/lib/phone';
+
+type LoginMethod = 'email' | 'phone';
 
 export default function LoginPage() {
   const router = useRouter();
+  const [method, setMethod] = useState<LoginMethod>('email');
   const [email, setEmail] = useState('');
+  const [countryCode, setCountryCode] = useState('SA');
+  const [localPhone, setLocalPhone] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -19,12 +26,35 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    if (!password) {
+      setError('كلمة المرور مطلوبة');
+      return;
+    }
+
+    let identifier = '';
+    if (method === 'email') {
+      if (!email.trim()) {
+        setError('البريد الإلكتروني مطلوب');
+        return;
+      }
+      identifier = email.trim();
+    } else {
+      const dialCode = getCountryByCode(countryCode).dialCode;
+      const e164 = normalizePhoneNumber(dialCode, localPhone);
+      if (!e164) {
+        setError('رقم الجوال غير صحيح');
+        return;
+      }
+      identifier = e164;
+    }
+
     setIsLoading(true);
 
     try {
       const res = await signIn('credentials', {
         redirect: false,
-        email,
+        identifier,
         password,
       });
 
@@ -32,55 +62,66 @@ export default function LoginPage() {
         setIsLoading(false);
         if (res.error === 'Configuration' || res.error === 'AccessDenied') {
           setError('حدث خطأ في تسجيل الدخول، تحقق من إعدادات الخادم');
-        } else if (res.error.includes('كلمة المرور') || res.error.includes('البريد')) {
-          setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
-        } else {
+        } else if (res.error === 'تم تعطيل حسابك') {
           setError(res.error);
+        } else {
+          // Unified message for bad credentials / unknown identifier
+          setError('بيانات الدخول غير صحيحة');
         }
         return;
       }
 
-      // Success
       setSuccess('تم تسجيل الدخول بنجاح!');
       setIsLoading(false);
-      
-      // Redirect after short delay
+
       setTimeout(() => {
         router.push('/dashboard');
         router.refresh();
       }, 800);
-
-    } catch (err: any) {
+    } catch (err) {
       setIsLoading(false);
       setError('حدث خطأ أثناء تسجيل الدخول');
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-navy via-[#06B6D4]/30 to-primary-navy flex items-center justify-center p-4">
-      {/* Background decorative elements */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-[#06B6D4] opacity-10 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-primary-navy opacity-10 rounded-full blur-3xl" />
+  const tabBase =
+    'flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors';
+  const tabActive = 'bg-[#6D5DFB] text-white shadow-sm';
+  const tabInactive = 'text-slate-600 hover:bg-slate-100';
 
-      {/* Content */}
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
       <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <Image src="/شعار%20بروز.svg" alt="بروز" width={100} height={40} className="h-10 w-auto object-contain brightness-0 invert" />
+            <Image src="/شعار%20بروز.svg" alt="بروز" width={100} height={40} className="h-10 w-auto object-contain" />
           </div>
-          <p className="text-slate-300 text-sm">منصة خدمات وخبراء متاجر سلة</p>
+          <p className="text-slate-500 text-sm">منصة خدمات وخبراء متاجر سلة</p>
         </div>
 
         {/* Form Container */}
-        <div className="bg-white rounded-lg shadow-2xl p-8">
-          {/* Header */}
-          <h1 className="text-2xl font-bold text-slate-900 mb-2 text-right">
-            تسجيل الدخول
-          </h1>
-          <p className="text-slate-600 mb-6 text-right text-sm">
-            أدخل بيانات الدخول الخاصة بك
-          </p>
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-8">
+          <h1 className="text-2xl font-bold text-slate-900 mb-2 text-right">تسجيل الدخول</h1>
+          <p className="text-slate-500 mb-6 text-right text-sm">أدخل بيانات الدخول الخاصة بك</p>
+
+          {/* Method Tabs */}
+          <div className="flex gap-2 p-1 bg-slate-100 rounded-xl mb-6">
+            <button
+              type="button"
+              onClick={() => { setMethod('email'); setError(''); }}
+              className={`${tabBase} ${method === 'email' ? tabActive : tabInactive}`}
+            >
+              البريد الإلكتروني
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMethod('phone'); setError(''); }}
+              className={`${tabBase} ${method === 'phone' ? tabActive : tabInactive}`}
+            >
+              رقم الجوال
+            </button>
+          </div>
 
           {/* Success Message */}
           {success && (
@@ -99,39 +140,45 @@ export default function LoginPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email Input */}
-            <div>
-              <label className="block text-sm font-medium text-slate-900 mb-2 text-right">
-                البريد الإلكتروني
-              </label>
-              <div className="relative">
-                <input
-                  type="email"
-                  placeholder="example@domain.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 pr-10 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
-                  required
-                />
-                <Mail size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            {method === 'email' ? (
+              <div>
+                <label className="block text-sm font-medium text-slate-900 mb-2 text-right">البريد الإلكتروني</label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    placeholder="example@domain.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-2.5 pr-10 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-400"
+                  />
+                  <Mail size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-slate-900 mb-2 text-right">رقم الجوال</label>
+                <PhoneInput
+                  countryCode={countryCode}
+                  onCountryChange={setCountryCode}
+                  value={localPhone}
+                  onChange={setLocalPhone}
+                  placeholder="5xxxxxxxx"
+                />
+              </div>
+            )}
 
             {/* Password Input */}
             <div>
-              <label className="block text-sm font-medium text-slate-900 mb-2 text-right">
-                كلمة المرور
-              </label>
+              <label className="block text-sm font-medium text-slate-900 mb-2 text-right">كلمة المرور</label>
               <div className="relative">
                 <input
                   type="password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 pr-10 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-[#06B6D4] text-right text-slate-900 placeholder-slate-500"
-                  required
+                  className="w-full px-4 py-2.5 pr-10 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-400"
                 />
-                <Lock size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                <Lock size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
               </div>
             </div>
 
@@ -148,27 +195,23 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#06B6D4] hover:bg-[#0891B2] disabled:bg-slate-400 text-white font-semibold py-2.5 rounded-lg transition-colors"
+              className="w-full bg-[#6D5DFB] hover:bg-[#4F46E5] disabled:bg-slate-400 text-white font-semibold py-2.5 rounded-lg transition-colors"
             >
               {isLoading ? 'جاري الدخول...' : 'تسجيل الدخول'}
             </button>
           </form>
 
-
-
           {/* Footer Link */}
           <p className="text-center text-slate-600 text-sm mt-6">
             ليس لديك حساب؟{' '}
-            <Link href="/register" className="text-[#06B6D4] font-semibold hover:underline">
+            <Link href="/register" className="text-[#6D5DFB] font-semibold hover:underline">
               إنشاء حساب جديد
             </Link>
           </p>
         </div>
 
         {/* Copyright */}
-        <p className="text-center text-slate-400 text-xs mt-6">
-          © 2024 BOROZ | بروز. جميع الحقوق محفوظة.
-        </p>
+        <p className="text-center text-slate-400 text-xs mt-6">© 2024 BOROZ | بروز. جميع الحقوق محفوظة.</p>
       </div>
     </div>
   );

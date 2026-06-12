@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '@/app/lib/prisma';
+import { normalizeToE164 } from '@/app/lib/phone';
 
 export async function POST(req: Request) {
   try {
@@ -9,6 +10,16 @@ export async function POST(req: Request) {
 
     if (!name || !email || !password || !storeName) {
       return NextResponse.json({ error: 'الرجاء تعبئة جميع الحقول المطلوبة' }, { status: 400 });
+    }
+
+    // Normalize phone to E.164 for consistent login-by-phone lookups
+    let normalizedPhone = '';
+    if (phone && String(phone).trim()) {
+      const e164 = normalizeToE164(String(phone));
+      if (!e164) {
+        return NextResponse.json({ error: 'رقم الجوال غير صحيح' }, { status: 400 });
+      }
+      normalizedPhone = e164;
     }
 
     // Check if user exists
@@ -31,7 +42,7 @@ export async function POST(req: Request) {
           name,
           email,
           password: hashedPassword,
-          phone: phone || '',
+          phone: normalizedPhone,
           globalRole: 'MERCHANT',
         },
       });
@@ -62,7 +73,7 @@ export async function POST(req: Request) {
           storeName,
           storeUrl: storeUrl || '',
           email,
-          phone: '',
+          phone: normalizedPhone,
           contactName: name,
         },
       });
