@@ -174,76 +174,98 @@ function Navbar() {
 
 function MacDashboardMockup() {
   return (
-    <div className="relative h-[460px] rounded-3xl overflow-hidden shadow-lg" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+    <div className="relative rounded-3xl overflow-hidden shadow-2xl" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', width: '620px', height: '420px' }}>
       {/* Mac Title Bar */}
-      <div className="h-12 bg-slate-50 border-b border-slate-200 flex items-center px-4 gap-3" style={{ background: '#F8FAFC' }}>
+      <div className="h-10 flex items-center px-4 gap-3 flex-shrink-0" style={{ background: '#F8FAFC', borderBottom: '1px solid #E5E7EB' }}>
         <div className="flex gap-2">
-          <div className="w-3 h-3 rounded-full" style={{ background: '#FF5F56' }} />
-          <div className="w-3 h-3 rounded-full" style={{ background: '#FFBD2E' }} />
-          <div className="w-3 h-3 rounded-full" style={{ background: '#27C93F' }} />
+          <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#FF5F56' }} />
+          <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#FFBD2E' }} />
+          <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#27C93F' }} />
         </div>
-        <span className="text-xs font-medium text-slate-600 flex-1 text-center">لوحة بروز</span>
-        <div className="w-12" />
+        <span className="text-[11px] font-semibold text-slate-600 flex-1 text-center">لوحة بروز</span>
+        <div className="w-10" />
       </div>
 
       {/* Dashboard Content */}
-      <div className="flex h-[calc(100%-48px)] overflow-hidden">
+      <div className="flex h-[calc(100%-40px)] overflow-hidden">
         {/* Sidebar */}
-        <div className="w-48 bg-white border-r border-slate-200 p-4 space-y-2 overflow-y-auto">
-          <div className="px-3 py-2 rounded-lg font-semibold text-xs text-slate-600 mb-4">لوحة التحكم</div>
-          {['لوحة التحكم', 'الطلبات', 'العروض', 'المشاريع', 'الرسائل'].map((item, i) => (
-            <div key={i} className={`px-3 py-2.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
-              i === 0 ? 'bg-purple-50 text-purple-700' : 'text-slate-600 hover:bg-slate-50'
-            }`} style={i === 0 ? { background: '#EEF2FF', color: '#6D5DFB' } : {}}>
-              {item}
+        <div className="w-40 flex-shrink-0 bg-white border-l border-slate-200 p-3 space-y-1 overflow-y-auto" style={{ borderColor: '#E5E7EB' }}>
+          <div className="px-2.5 py-1.5 text-[10px] font-bold text-slate-500 mb-3">القائمة</div>
+          {[
+            { label: 'لوحة التحكم', active: true },
+            { label: 'الطلبات', active: false },
+            { label: 'العروض', active: false },
+            { label: 'المشاريع', active: false },
+            { label: 'الرسائل', active: false },
+          ].map((item, i) => (
+            <div
+              key={i}
+              className="px-2.5 py-2 rounded text-[10px] font-medium cursor-pointer transition-colors"
+              style={item.active ? { background: '#EEF2FF', color: '#6D5DFB' } : { color: '#64748B' }}
+            >
+              {item.label}
             </div>
           ))}
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 bg-white overflow-y-auto">
-          <div className="p-6 space-y-4">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">مرحبًا، تاجر بروز</h3>
-                <p className="text-xs text-slate-500 mt-1">الطلبات والعروض والمشاريع في مكان واحد</p>
+        <div className="flex-1 bg-white overflow-y-auto p-3.5 space-y-3">
+          {/* Header */}
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div>
+              <h3 className="text-[12px] font-bold text-slate-900">لوحة متابعة التنفيذ</h3>
+              <p className="text-[9px] text-slate-500 mt-0.5">جميع طلباتك وعروضك في مكان واحد</p>
+            </div>
+            <button className="text-[9px] font-semibold px-2 py-1 rounded" style={{ background: '#6D5DFB', color: '#FFFFFF' }}>
+              + طلب جديد
+            </button>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { label: 'الطلبات', value: '12', icon: '📋' },
+              { label: 'العروض', value: '8', icon: '💼' },
+              { label: 'المشاريع', value: '5', icon: '✨' },
+              { label: 'التسليمات', value: '3', icon: '✓' },
+            ].map((stat, i) => (
+              <div key={i} className="p-2 rounded text-center" style={{ background: '#F8FAFC', border: '1px solid #EEF2FF' }}>
+                <div className="text-sm mb-0.5">{stat.icon}</div>
+                <div className="text-[11px] font-bold text-slate-900">{stat.value}</div>
+                <div className="text-[8px] text-slate-500 mt-0.5">{stat.label}</div>
               </div>
-              <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ background: '#6D5DFB', color: '#FFFFFF' }}>
-                + طلب جديد
-              </button>
-            </div>
+            ))}
+          </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              {[
-                { label: 'الطلبات قيد المراجعة', value: '2', icon: '📋' },
-                { label: 'العروض المستلمة', value: '4', icon: '💼' },
-                { label: 'المشاريع قيد التنفيذ', value: '1', icon: '⚙️' },
-              ].map((stat, i) => (
-                <div key={i} className="p-2.5 rounded-lg" style={{ background: '#F8FAFC', border: '1px solid #E5E7EB' }}>
-                  <div className="text-lg mb-1">{stat.icon}</div>
-                  <div className="text-xl font-bold text-slate-900">{stat.value}</div>
-                  <div className="text-[10px] text-slate-500 mt-1">{stat.label}</div>
-                </div>
-              ))}
-            </div>
+          {/* Workflow */}
+          <div className="text-[9px] font-medium text-slate-600 py-1.5 px-2 rounded" style={{ background: '#EEF2FF', border: '1px solid #DDD6FE' }}>
+            طلب → مراجعة → عروض → تنفيذ → تسليم
+          </div>
 
-            {/* Projects List */}
-            <div className="space-y-2">
-              {[
-                { title: 'تخصيص واجهة متجر سلة', status: 'قيد التنفيذ', badge: '🔄' },
-                { title: 'تحسين SEO', status: 'بانتظار العروض', badge: '⏳' },
-                { title: 'صفحة هبوط', status: 'تم التسليم', badge: '✓' },
-              ].map((project, i) => (
-                <div key={i} className="p-2.5 rounded-lg flex items-center justify-between text-[10px]" style={{ background: '#F8FAFC', border: '1px solid #E5E7EB' }}>
-                  <div className="flex-1">
-                    <div className="font-semibold text-slate-900">{project.title}</div>
-                    <div className="text-slate-500 mt-0.5">{project.status}</div>
-                  </div>
-                  <span className="text-lg">{project.badge}</span>
+          {/* Projects List */}
+          <div className="space-y-1.5">
+            {[
+              { title: 'تخصيص متجر سلة', status: 'قيد التنفيذ', color: '#6D5DFB' },
+              { title: 'تحسين SEO', status: 'عروض مستقبلة', color: '#16A34A' },
+              { title: 'صفحة هبوط', status: 'بانتظار المراجعة', color: '#D97706' },
+            ].map((project, i) => (
+              <div key={i} className="p-1.5 rounded text-[9px] flex items-center justify-between" style={{ background: '#F8FAFC', border: '1px solid #E5E7EB' }}>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-slate-900 truncate">{project.title}</div>
+                  <div className="text-slate-500 text-[8px] mt-0.5">{project.status}</div>
                 </div>
-              ))}
+                <div className="w-1.5 h-1.5 rounded-full ml-2 flex-shrink-0" style={{ background: project.color }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Activity */}
+          <div className="border-t border-slate-100 pt-2 text-[8px]">
+            <div className="font-bold text-slate-600 mb-1">آخر نشاط</div>
+            <div className="space-y-1 text-slate-500">
+              <div>✓ تم إرسال عرض جديد</div>
+              <div>📝 تم تحديث حالة المشروع</div>
+              <div>📤 تم رفع تسليم جديد</div>
             </div>
           </div>
         </div>
@@ -256,51 +278,62 @@ function MacDashboardMockup() {
 
 function HeroSection() {
   return (
-    <section className="relative pt-32 pb-24 md:pt-44 md:pb-32 overflow-hidden" style={{ background: '#FFFFFF' }}>
-      {/* Soft Purple Halo */}
-      <div className="absolute top-32 left-1/3 w-96 h-96 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: '#6D5DFB' }} />
+    <section className="relative py-20 md:py-28 lg:py-32 overflow-hidden" style={{ background: '#FFFFFF' }}>
+      {/* Soft Purple Halo - positioned behind mockup */}
+      <div className="absolute top-1/2 right-1/4 w-[700px] h-[600px] rounded-full opacity-15 blur-3xl pointer-events-none" style={{ background: '#6D5DFB', transform: 'translateY(-50%)' }} />
 
       <div className="container-xl relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-8 lg:gap-12 items-center">
-          {/* Text Column */}
-          <div className="space-y-8 max-w-2xl order-2 lg:order-1">
-            <div className="space-y-6">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight" style={{ color: '#111827' }}>
-                طوّر متجرك بدون فوضى البحث والمتابعة
+        <div className="grid grid-cols-1 lg:grid-cols-[45%_55%] gap-12 lg:gap-16 items-center">
+          {/* Text Column - Right */}
+          <div className="space-y-8 order-2 lg:order-1">
+            {/* Headline */}
+            <div className="space-y-5">
+              <h1 className="text-5xl md:text-6xl lg:text-6xl font-bold leading-[1.2]" style={{ color: '#111827' }}>
+                من طلب الخدمة إلى التسليم… بروز يدير التنفيذ كاملًا
               </h1>
               <p className="text-lg md:text-xl leading-relaxed" style={{ color: '#475569' }}>
-                بروز منصة تدير طلبات تطوير المتاجر من رفع الطلب إلى مراجعة العروض، اختيار الخبير، متابعة التنفيذ، واستلام العمل من مكان واحد.
+                منصة واحدة تجمع طلبات التطوير، مراجعة المتطلبات، عروض الخبراء، متابعة التنفيذ، الرسائل، والتسليم النهائي في مسار واضح ومنظم.
               </p>
             </div>
 
-            <div className="space-y-4">
+            {/* Bullet Points */}
+            <div className="space-y-3.5">
               {[
-                'طلب واضح من البداية',
-                'عروض من خبراء معتمدين',
-                'متابعة منظمة حتى التسليم',
+                'ارفع طلبك مرة واحدة',
+                'قارن عروض الخبراء المعتمدين',
+                'تابع التنفيذ والتسليم من لوحة واحدة',
               ].map((line, i) => (
-                <div key={i} className="flex items-center gap-4">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#6D5DFB" strokeWidth="3" strokeLinecap="round" className="w-6 h-6 flex-shrink-0">
+                <div key={i} className="flex items-start gap-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#6D5DFB" strokeWidth="3" strokeLinecap="round" className="w-6 h-6 flex-shrink-0 mt-0.5">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
-                  <span className="text-base font-medium" style={{ color: '#111827' }}>{line}</span>
+                  <span className="text-base font-semibold" style={{ color: '#111827' }}>{line}</span>
                 </div>
               ))}
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Link href="/register" className="btn-primary text-base px-8 py-4 text-center font-semibold rounded-xl" style={{ background: '#6D5DFB', color: '#FFFFFF' }}>
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <Link
+                href="/register"
+                className="text-center px-8 py-4 font-semibold rounded-2xl text-white transition-all hover:shadow-lg"
+                style={{ background: '#6D5DFB' }}
+              >
                 ابدأ طلبك الآن
               </Link>
-              <a href="#how-it-works" className="inline-flex items-center justify-center gap-2 text-base font-semibold px-8 py-4 rounded-xl transition-colors" style={{ border: '2px solid #E5E7EB', color: '#111827', background: '#FFFFFF' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'} onMouseLeave={(e) => e.currentTarget.style.background = '#FFFFFF'}>
-                شاهد طريقة العمل
+              <a
+                href="#how-it-works"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold rounded-2xl transition-all hover:shadow-sm"
+                style={{ border: '2px solid #E5E7EB', color: '#111827', background: '#FFFFFF' }}
+              >
+                شاهد كيف تعمل بروز
                 <ArrowDownIcon />
               </a>
             </div>
           </div>
 
-          {/* Mac Mockup Column */}
-          <div className="order-1 lg:order-2">
+          {/* Mac Mockup Column - Left */}
+          <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
             <MacDashboardMockup />
           </div>
         </div>
