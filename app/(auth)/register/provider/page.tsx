@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Mail, Lock, UserCircle2, Briefcase, Link as LinkIcon, CheckCircle, ArrowRight, ArrowLeft, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
+import { Mail, Lock, UserCircle2, Briefcase, Link as LinkIcon, CheckCircle, ArrowRight, ArrowLeft, Plus, Trash2, X } from 'lucide-react';
 import PhoneInput from '@/app/components/ui/PhoneInput';
 import { getCountryByCode, normalizePhoneNumber } from '@/app/lib/phone';
 
@@ -20,6 +20,18 @@ interface Category {
   nameAr: string;
   slug: string;
   services: Service[];
+}
+
+interface SpecialtyGroup {
+  id: string;
+  title: string;
+  description: string;
+  services: Service[];
+}
+
+interface StructuredCategory extends Category {
+  shortDescription: string;
+  specialties: SpecialtyGroup[];
 }
 
 interface PortfolioItem {
@@ -60,6 +72,62 @@ const UI_SERVICE_GROUPS: Record<string, { title: string; description: string; sl
   ]
 };
 
+const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  'storefront-development': 'تنفيذ تطوير الواجهات والتخصيصات وتجربة المتجر.',
+  'content-optimization': 'تحسين المحتوى والوصف والصفحات المرتبطة بالتحويل والظهور.',
+  'marketing-growth': 'إدارة الحملات والتتبع والتحسين القائم على الأداء.',
+  'design-identity': 'تصميم هوية المتجر والمواد البصرية والصفحات التسويقية.',
+  'media-production': 'إنتاج الصور والفيديو والمحتوى المرئي التجاري.',
+  'automation-integrations': 'ربط الأنظمة وأتمتة العمليات والتكاملات الفنية.',
+};
+
+function buildStructuredCategories(categories: Category[]): StructuredCategory[] {
+  return categories.map((category) => {
+    const uiGroups = UI_SERVICE_GROUPS[category.slug] || [];
+    const renderedServiceIds = new Set<string>();
+
+    const specialties: SpecialtyGroup[] = uiGroups
+      .map((group, index) => {
+        const services = category.services.filter((service) => group.slugs.includes(service.slug));
+        services.forEach((service) => renderedServiceIds.add(service.id));
+
+        return {
+          id: `${category.id}-specialty-${index}`,
+          title: group.title,
+          description: group.description,
+          services,
+        };
+      })
+      .filter((group) => group.services.length > 0);
+
+    const remainingServices = category.services.filter((service) => !renderedServiceIds.has(service.id));
+
+    if (remainingServices.length > 0) {
+      specialties.push({
+        id: `${category.id}-specialty-other`,
+        title: 'خدمات إضافية',
+        description: 'خدمات مرتبطة بهذا المسار ولم تُدرج ضمن تخصص فرعي آخر.',
+        services: remainingServices,
+      });
+    }
+
+    if (specialties.length === 0 && category.services.length > 0) {
+      specialties.push({
+        id: `${category.id}-specialty-all`,
+        title: 'جميع الخدمات',
+        description: 'حدد الخدمات الدقيقة التي تستطيع تنفيذها فعلياً.',
+        services: category.services,
+      });
+    }
+
+    return {
+      ...category,
+      shortDescription: CATEGORY_DESCRIPTIONS[category.slug] || 'حدد المسار الذي يعبّر عن خبرتك التنفيذية الأساسية.',
+      specialties,
+    };
+  });
+}
+
 export default function ProviderRegisterPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
@@ -83,7 +151,8 @@ export default function ProviderRegisterPage() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
   
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
   const [newItem, setNewItem] = useState({ title: '', description: '', projectUrl: '', serviceId: '' });
@@ -98,9 +167,6 @@ export default function ProviderRegisterPage() {
       .then(data => {
         if (data.categories) {
           setCategories(data.categories);
-          if (data.categories.length > 0) {
-            setExpandedCategories([data.categories[0].id]);
-          }
         }
       })
       .catch(err => console.error('Error fetching services:', err));
@@ -116,19 +182,92 @@ export default function ProviderRegisterPage() {
     }
   };
 
+  const structuredCategories = useMemo(() => buildStructuredCategories(categories), [categories]);
+
+  const specialtyIndex = useMemo(() => {
+    const map = new Map<string, { categoryId: string; categoryName: string; specialty: SpecialtyGroup }>();
+    structuredCategories.forEach((category) => {
+      category.specialties.forEach((specialty) => {
+        map.set(specialty.id, {
+          categoryId: category.id,
+          categoryName: category.nameAr,
+          specialty,
+        });
+      });
+    });
+    return map;
+  }, [structuredCategories]);
+
+  const serviceIndex = useMemo(() => {
+    const map = new Map<string, { categoryId: string; specialtyId: string; service: Service }>();
+    structuredCategories.forEach((category) => {
+      category.specialties.forEach((specialty) => {
+        specialty.services.forEach((service) => {
+          map.set(service.id, {
+            categoryId: category.id,
+            specialtyId: specialty.id,
+            service,
+          });
+        });
+      });
+    });
+    return map;
+  }, [structuredCategories]);
+
   const toggleCategory = (categoryId: string) => {
-    setExpandedCategories(prev => 
-      prev.includes(categoryId) ? prev.filter(id => id !== categoryId) : [...prev, categoryId]
-    );
+    const category = structuredCategories.find((item) => item.id === categoryId);
+    if (!category) return;
+
+    const isSelected = selectedCategories.includes(categoryId);
+
+    if (isSelected) {
+      const specialtyIds = category.specialties.map((specialty) => specialty.id);
+      const serviceIds = category.specialties.flatMap((specialty) => specialty.services.map((service) => service.id));
+      setSelectedCategories((prev) => prev.filter((id) => id !== categoryId));
+      setSelectedSpecialties((prev) => prev.filter((id) => !specialtyIds.includes(id)));
+      setSelectedServices((prev) => prev.filter((id) => !serviceIds.includes(id)));
+      return;
+    }
+
+    setSelectedCategories((prev) => [...prev, categoryId]);
+  };
+
+  const toggleSpecialty = (specialtyId: string) => {
+    const specialtyData = specialtyIndex.get(specialtyId);
+    if (!specialtyData) return;
+
+    const isSelected = selectedSpecialties.includes(specialtyId);
+
+    if (isSelected) {
+      const serviceIds = specialtyData.specialty.services.map((service) => service.id);
+      setSelectedSpecialties((prev) => prev.filter((id) => id !== specialtyId));
+      setSelectedServices((prev) => prev.filter((id) => !serviceIds.includes(id)));
+      return;
+    }
+
+    setSelectedCategories((prev) => (prev.includes(specialtyData.categoryId) ? prev : [...prev, specialtyData.categoryId]));
+    setSelectedSpecialties((prev) => [...prev, specialtyId]);
   };
 
   const toggleService = (serviceId: string) => {
-    setSelectedServices(prev => 
-      prev.includes(serviceId) ? prev.filter(id => id !== serviceId) : [...prev, serviceId]
-    );
+    const serviceData = serviceIndex.get(serviceId);
+    if (!serviceData) return;
+
+    setSelectedServices((prev) => {
+      if (prev.includes(serviceId)) {
+        return prev.filter((id) => id !== serviceId);
+      }
+      return [...prev, serviceId];
+    });
+
+    setSelectedCategories((prev) => (prev.includes(serviceData.categoryId) ? prev : [...prev, serviceData.categoryId]));
+    setSelectedSpecialties((prev) => (prev.includes(serviceData.specialtyId) ? prev : [...prev, serviceData.specialtyId]));
   };
 
-  const toggleGroup = (serviceIds: string[]) => {
+  const toggleGroup = (specialtyId: string, serviceIds: string[]) => {
+    const specialtyData = specialtyIndex.get(specialtyId);
+    if (!specialtyData) return;
+
     const allSelected = serviceIds.length > 0 && serviceIds.every(id => selectedServices.includes(id));
     if (allSelected) {
       setSelectedServices(prev => prev.filter(id => !serviceIds.includes(id)));
@@ -137,8 +276,31 @@ export default function ProviderRegisterPage() {
         const newSet = new Set([...prev, ...serviceIds]);
         return Array.from(newSet);
       });
+      setSelectedCategories((prev) => (prev.includes(specialtyData.categoryId) ? prev : [...prev, specialtyData.categoryId]));
+      setSelectedSpecialties((prev) => (prev.includes(specialtyId) ? prev : [...prev, specialtyId]));
     }
   };
+
+  const clearSelections = () => {
+    setSelectedCategories([]);
+    setSelectedSpecialties([]);
+    setSelectedServices([]);
+  };
+
+  const selectedCategoryObjects = structuredCategories.filter((category) => selectedCategories.includes(category.id));
+  const selectedSpecialtyObjects = selectedSpecialties
+    .map((id) => specialtyIndex.get(id))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  const selectionSummary = `${selectedCategories.length} مسار، ${selectedSpecialties.length} تخصص، ${selectedServices.length} خدمة`;
+
+  const selectionHint = selectedCategories.length === 0
+    ? 'ابدأ باختيار مسار رئيسي واحد على الأقل لعرض التخصصات التابعة له.'
+    : selectedSpecialties.length === 0
+    ? 'اختر الآن التخصصات التي تمثل خبرتك الفعلية داخل المسارات المحددة.'
+    : selectedServices.length === 0
+    ? 'حدد خدمة دقيقة واحدة على الأقل من التخصصات التي اخترتها للمتابعة.'
+    : 'يمكنك متابعة التحديد أو الانتقال للخطوة التالية ما دمت حددت خدمة واحدة على الأقل.';
 
   const addPortfolioItem = () => {
     if (!newItem.title || !newItem.description) return;
@@ -423,126 +585,285 @@ export default function ProviderRegisterPage() {
           {/* STEP 3 */}
           {currentStep === 3 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-2xl font-bold text-[#111827]">المسارات والخدمات</h2>
-                <span className="text-sm font-medium px-4 py-1.5 bg-[#6D5DFB]/10 text-[#6D5DFB] rounded-full">
-                  تم تحديد ({selectedServices.length}) خدمة
-                </span>
+              <div className="mb-2 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-[#111827]">حدد مجالات خبرتك</h2>
+                  <p className="mt-2 text-slate-500">
+                    اختر المسارات والتخصصات والخدمات التي تستطيع تنفيذها فعليًا. ستظهر خدماتك للتجار بعد اعتماد حسابك.
+                  </p>
+                </div>
+                <div className="rounded-full bg-[#6D5DFB]/10 px-4 py-2 text-sm font-medium text-[#6D5DFB]">
+                  تم تحديد {selectionSummary}
+                </div>
               </div>
-              <p className="text-slate-500 mb-6">حدد الخدمات التي يمكنك تقديمها. يرجى اختيار خدمة واحدة على الأقل للاستمرار.</p>
-              
-              <div className="space-y-4">
-                {categories.map((cat) => {
-                  const isExpanded = expandedCategories.includes(cat.id);
-                  const selectedInCat = cat.services.filter(s => selectedServices.includes(s.id)).length;
-                  
-                  return (
-                    <div key={cat.id} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm leading-7 text-slate-600">
+                ابدأ باختيار مسار رئيسي، ثم حدد التخصصات والخدمات الدقيقة المناسبة لك.
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="text-base font-bold text-[#111827]">الملخص الحالي</h3>
+                  {selectedServices.length > 0 ? (
+                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                      جاهز للمتابعة بعدد {selectedServices.length} خدمة
+                    </span>
+                  ) : null}
+                </div>
+                <p className="text-sm text-slate-500">{selectionHint}</p>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <h3 className="text-lg font-bold text-[#111827]">1. المسارات الرئيسية</h3>
+                    <span className="text-xs font-medium text-slate-500">اختر مسارًا واحدًا أو أكثر</span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {structuredCategories.map((category) => {
+                      const isSelected = selectedCategories.includes(category.id);
+                      const selectedInCategory = category.services.filter((service) => selectedServices.includes(service.id)).length;
+                      return (
+                        <button
+                          key={category.id}
+                          type="button"
+                          onClick={() => toggleCategory(category.id)}
+                          className={`rounded-2xl border p-5 text-right transition-all ${
+                            isSelected
+                              ? 'border-[#6D5DFB] bg-[#6D5DFB]/5 shadow-sm'
+                              : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="text-lg font-bold text-[#111827]">{category.nameAr}</div>
+                              <p className="mt-2 text-sm leading-7 text-slate-500">{category.shortDescription}</p>
+                            </div>
+                            <div className={`mt-1 h-4 w-4 rounded-full border-2 ${isSelected ? 'border-[#6D5DFB] bg-[#6D5DFB]' : 'border-slate-300 bg-white'}`} />
+                          </div>
+                          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1">{category.specialties.length} تخصص</span>
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1">{category.services.length} خدمة</span>
+                            {selectedInCategory > 0 ? (
+                              <span className="rounded-full bg-[#6D5DFB]/10 px-2.5 py-1 font-semibold text-[#6D5DFB]">
+                                {selectedInCategory} محددة
+                              </span>
+                            ) : null}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {selectedCategoryObjects.length > 0 ? (
+                  <div>
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <h3 className="text-lg font-bold text-[#111827]">2. التخصصات</h3>
+                      <span className="text-xs font-medium text-slate-500">اعرض فقط التخصصات التابعة للمسارات التي اخترتها</span>
+                    </div>
+                    <div className="space-y-5">
+                      {selectedCategoryObjects.map((category) => (
+                        <div key={category.id} className="rounded-2xl border border-slate-200 bg-white p-5">
+                          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                              <h4 className="text-base font-bold text-[#111827]">{category.nameAr}</h4>
+                              <p className="mt-1 text-sm text-slate-500">اختر التخصصات التي تستطيع تنفيذ خدماتها فعليًا.</p>
+                            </div>
+                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                              {category.specialties.length} تخصص
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                            {category.specialties.map((specialty) => {
+                              const isSelected = selectedSpecialties.includes(specialty.id);
+                              const selectedInSpecialty = specialty.services.filter((service) => selectedServices.includes(service.id)).length;
+                              return (
+                                <button
+                                  key={specialty.id}
+                                  type="button"
+                                  onClick={() => toggleSpecialty(specialty.id)}
+                                  className={`rounded-2xl border p-4 text-right transition-all ${
+                                    isSelected
+                                      ? 'border-[#6D5DFB] bg-[#6D5DFB]/5'
+                                      : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100'
+                                  }`}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                      <div className="text-sm font-bold text-[#111827]">{specialty.title}</div>
+                                      <p className="mt-2 text-sm leading-6 text-slate-500">{specialty.description}</p>
+                                    </div>
+                                    <div className={`mt-1 h-4 w-4 rounded-full border-2 ${isSelected ? 'border-[#6D5DFB] bg-[#6D5DFB]' : 'border-slate-300 bg-white'}`} />
+                                  </div>
+                                  <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                    <span className="rounded-full bg-white px-2.5 py-1">{specialty.services.length} خدمة</span>
+                                    {selectedInSpecialty > 0 ? (
+                                      <span className="rounded-full bg-[#6D5DFB]/10 px-2.5 py-1 font-semibold text-[#6D5DFB]">
+                                        {selectedInSpecialty} محددة
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {selectedSpecialtyObjects.length > 0 ? (
+                  <div>
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <h3 className="text-lg font-bold text-[#111827]">3. الخدمات الدقيقة</h3>
+                      <span className="text-xs font-medium text-slate-500">حدد خدمة واحدة على الأقل للمتابعة</span>
+                    </div>
+                    <div className="space-y-5">
+                      {selectedSpecialtyObjects.map(({ categoryName, specialty }) => {
+                        const groupServiceIds = specialty.services.map((service) => service.id);
+                        const selectedInGroup = groupServiceIds.filter((id) => selectedServices.includes(id)).length;
+                        const isAllSelected = groupServiceIds.length > 0 && groupServiceIds.every((id) => selectedServices.includes(id));
+                        const isPartiallySelected = selectedInGroup > 0 && !isAllSelected;
+
+                        return (
+                          <div key={specialty.id} className="rounded-2xl border border-slate-200 bg-white p-5">
+                            <div className="mb-5 flex flex-col gap-4 border-b border-slate-200 pb-4 md:flex-row md:items-center md:justify-between">
+                              <div>
+                                <div className="text-xs font-medium text-slate-400">{categoryName}</div>
+                                <h4 className="mt-1 text-base font-bold text-[#111827]">{specialty.title}</h4>
+                                <p className="mt-1 text-sm text-slate-500">{specialty.description}</p>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-3">
+                                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                                  {selectedInGroup} / {specialty.services.length} محددة
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleGroup(specialty.id, groupServiceIds)}
+                                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition-all ${
+                                    isAllSelected
+                                      ? 'border-[#6D5DFB] bg-[#6D5DFB] text-white hover:bg-[#4F46E5]'
+                                      : isPartiallySelected
+                                        ? 'border-[#6D5DFB]/30 bg-[#6D5DFB]/10 text-[#6D5DFB] hover:bg-[#6D5DFB]/20'
+                                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                  }`}
+                                >
+                                  {isAllSelected ? 'إلغاء تحديد الكل' : 'تحديد الكل'}
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                              {specialty.services.map((service) => {
+                                const isSelected = selectedServices.includes(service.id);
+                                return (
+                                  <label
+                                    key={service.id}
+                                    className={`flex items-start gap-3 rounded-2xl border p-4 transition-all cursor-pointer ${
+                                      isSelected
+                                        ? 'border-[#6D5DFB] bg-[#6D5DFB]/5 shadow-sm'
+                                        : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() => toggleService(service.id)}
+                                      className="mt-1 h-5 w-5 rounded border-slate-300 text-[#6D5DFB] focus:ring-[#6D5DFB]"
+                                    />
+                                    <span className={`text-sm leading-7 ${isSelected ? 'font-bold text-[#111827]' : 'font-medium text-slate-700'}`}>
+                                      {service.nameAr}
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <h3 className="text-lg font-bold text-[#111827]">اختياراتك</h3>
+                    {selectedCategories.length > 0 || selectedSpecialties.length > 0 || selectedServices.length > 0 ? (
                       <button
                         type="button"
-                        onClick={() => toggleCategory(cat.id)}
-                        className="w-full px-5 py-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors"
+                        onClick={clearSelections}
+                        className="text-sm font-medium text-red-600 hover:text-red-700"
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="font-bold text-lg text-[#111827]">{cat.nameAr}</span>
-                          {selectedInCat > 0 && (
-                            <span className="text-xs font-semibold bg-[#6D5DFB] text-white px-2.5 py-1 rounded-full">
-                              {selectedInCat} محددة
-                            </span>
-                          )}
-                        </div>
-                        {isExpanded ? <ChevronUp size={20} className="text-slate-500" /> : <ChevronDown size={20} className="text-slate-500" />}
+                        مسح الاختيارات
                       </button>
-                      
-                      {isExpanded && (
-                        <div className="p-5 space-y-8 bg-white">
-                          {(() => {
-                            const uiGroups = UI_SERVICE_GROUPS[cat.slug] || [];
-                            const renderedServiceIds = new Set<string>();
-                            
-                            const groupsToRender = uiGroups.map(uiGroup => {
-                              const groupServices = cat.services.filter(s => uiGroup.slugs.includes(s.slug));
-                              groupServices.forEach(s => renderedServiceIds.add(s.id));
-                              return { ...uiGroup, services: groupServices };
-                            }).filter(g => g.services.length > 0);
+                    ) : null}
+                  </div>
 
-                            const otherServices = cat.services.filter(s => !renderedServiceIds.has(s.id));
-                            if (otherServices.length > 0) {
-                              groupsToRender.push({ title: 'خدمات إضافية', description: 'خدمات أخرى في هذا القسم', slugs: [], services: otherServices });
-                            }
-
-                            if (groupsToRender.length === 0) {
-                              groupsToRender.push({ title: 'جميع الخدمات', description: '', slugs: [], services: cat.services });
-                            }
-
-                            return groupsToRender.map((group, gIdx) => {
-                              const groupServiceIds = group.services.map(s => s.id);
-                              const isAllSelected = groupServiceIds.length > 0 && groupServiceIds.every(id => selectedServices.includes(id));
-                              const selectedInGroup = groupServiceIds.filter(id => selectedServices.includes(id)).length;
-                              const isPartiallySelected = selectedInGroup > 0 && !isAllSelected;
-
-                              return (
-                                <div key={gIdx} className="bg-slate-50/50 border border-slate-200 rounded-xl p-5">
-                                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 pb-4 border-b border-slate-200">
-                                    <div>
-                                      <h4 className="font-bold text-lg text-slate-800">{group.title}</h4>
-                                      {group.description && <p className="text-sm text-slate-500 mt-1">{group.description}</p>}
-                                    </div>
-                                    <div className="flex items-center gap-3 shrink-0">
-                                      <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-                                        {selectedInGroup} / {group.services.length} محددة
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={() => toggleGroup(groupServiceIds)}
-                                        className={`text-sm px-4 py-2 rounded-lg border transition-all flex items-center justify-center font-medium ${
-                                          isAllSelected
-                                            ? 'bg-[#6D5DFB] text-white border-[#6D5DFB] hover:bg-[#4F46E5]'
-                                            : isPartiallySelected
-                                              ? 'bg-[#6D5DFB]/10 text-[#6D5DFB] border-[#6D5DFB]/30 hover:bg-[#6D5DFB]/20'
-                                              : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
-                                        }`}
-                                      >
-                                        {isAllSelected ? 'إلغاء تحديد كل خدمات هذا المسار' : 'تحديد كل خدمات هذا المسار'}
-                                      </button>
-                                    </div>
-                                  </div>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                    {group.services.map(srv => {
-                                      const isSelected = selectedServices.includes(srv.id);
-                                      return (
-                                        <label
-                                          key={srv.id}
-                                          className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
-                                            isSelected 
-                                              ? 'border-[#6D5DFB] bg-[#6D5DFB]/5 shadow-sm' 
-                                              : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50'
-                                          }`}
-                                        >
-                                          <div className="mt-0.5 shrink-0">
-                                            <input
-                                              type="checkbox"
-                                              checked={isSelected}
-                                              onChange={() => toggleService(srv.id)}
-                                              className="w-5 h-5 rounded text-[#6D5DFB] focus:ring-[#6D5DFB] border-slate-300 cursor-pointer"
-                                            />
-                                          </div>
-                                          <span className={`text-sm leading-snug pt-0.5 ${isSelected ? 'font-bold text-[#111827]' : 'font-medium text-slate-700'}`}>
-                                            {srv.nameAr}
-                                          </span>
-                                        </label>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              );
-                            });
-                          })()}
+                  {selectedCategories.length === 0 && selectedSpecialties.length === 0 && selectedServices.length === 0 ? (
+                    <p className="text-sm text-slate-500">لا توجد اختيارات بعد. ابدأ بتحديد مسار رئيسي للمتابعة.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {selectedCategories.length > 0 ? (
+                        <div>
+                          <div className="mb-2 text-sm font-medium text-slate-500">المسارات</div>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedCategoryObjects.map((category) => (
+                              <button
+                                key={category.id}
+                                type="button"
+                                onClick={() => toggleCategory(category.id)}
+                                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700"
+                              >
+                                {category.nameAr}
+                                <X size={14} />
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      )}
+                      ) : null}
+
+                      {selectedSpecialties.length > 0 ? (
+                        <div>
+                          <div className="mb-2 text-sm font-medium text-slate-500">التخصصات</div>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedSpecialtyObjects.map(({ specialty }) => (
+                              <button
+                                key={specialty.id}
+                                type="button"
+                                onClick={() => toggleSpecialty(specialty.id)}
+                                className="inline-flex items-center gap-2 rounded-full border border-[#6D5DFB]/20 bg-[#6D5DFB]/5 px-3 py-1.5 text-sm font-medium text-[#6D5DFB]"
+                              >
+                                {specialty.title}
+                                <X size={14} />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {selectedServices.length > 0 ? (
+                        <div>
+                          <div className="mb-2 text-sm font-medium text-slate-500">الخدمات</div>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedServices.map((serviceId) => (
+                              <button
+                                key={serviceId}
+                                type="button"
+                                onClick={() => toggleService(serviceId)}
+                                className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700"
+                              >
+                                {getServiceName(serviceId)}
+                                <X size={14} />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
-                  );
-                })}
+                  )}
+                </div>
               </div>
             </div>
           )}
