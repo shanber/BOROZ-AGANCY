@@ -8,6 +8,7 @@ import { merchantOrderOwnershipFilter } from '@/app/lib/order-access';
 import { getOrderStatusLabel, getOrderStatusStyle } from '@/app/lib/order-status';
 import { merchantOfferOrderStatuses } from '@/app/lib/provider-opportunities';
 import { resolveServiceLabel } from '@/app/lib/services';
+import { OpsBadge, OpsEmptyState, OpsPageHeader, OpsSectionHeader, OpsSurface } from '@/app/components/execution/OpsUI';
 
 export default async function MerchantOffersPage() {
   const session = await getServerSession(authOptions);
@@ -48,63 +49,62 @@ export default async function MerchantOffersPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col gap-2 border-b border-slate-200/60 pb-5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[#06B6D4]">لوحة تحكم التاجر</p>
-        <h1 className="text-2xl font-bold text-[#111827]">العروض</h1>
-        <p className="max-w-3xl text-sm leading-relaxed text-slate-500">
-          هنا تراجع العروض التي وصلت من الخبراء المدعوين داخل بروز، وتقارنها قبل اختيار العرض المناسب للانتقال إلى مرحلة التنفيذ.
-        </p>
-      </div>
+      <OpsPageHeader
+        eyebrow="Offers"
+        title="العروض"
+        description="كل عرض هنا هو خطوة قرار تشغيلية قبل بدء التنفيذ: مقارنة، اختيار، ثم تحويل المشروع إلى مسار عمل فعلي."
+      >
+        <OpsBadge tone="slate" label={`طلبات بعروض ${orders.length}`} />
+      </OpsPageHeader>
 
-      {orders.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cyan-50 text-[#06B6D4]">
-            <Inbox size={30} />
+      <OpsSurface>
+        <OpsSectionHeader title="الطلبات التي تحتوي عروضاً" description="اختر العرض المناسب فقط عندما تكون جاهزاً لنقل الطلب إلى التنفيذ الفعلي." />
+        {orders.length === 0 ? (
+          <OpsEmptyState
+            icon={Inbox}
+            title="لا توجد عروض جاهزة للمراجعة حالياً"
+            description="عندما يبدأ الخبراء المدعوون بتقديم عروضهم على طلباتك، ستظهر هنا للمقارنة والاختيار."
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-5 p-6 xl:grid-cols-2">
+            {orders.map((order) => (
+              <div key={order.orderNumber} className="rounded-[24px] border border-slate-200 bg-white p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{order.orderNumber}</div>
+                    <h2 className="mt-2 text-lg font-bold text-[#0B132B]">{resolveServiceLabel(order.serviceType)}</h2>
+                    <p className="mt-1 text-sm text-slate-500">{order.storeName}</p>
+                  </div>
+                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${getOrderStatusStyle(order.status)}`}>
+                    {getOrderStatusLabel(order.status)}
+                  </span>
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-3 text-sm text-slate-600">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div className="text-[11px] font-bold text-slate-500">عدد العروض</div>
+                    <div className="mt-1 font-semibold text-slate-800">{order.offers.length}</div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div className="text-[11px] font-bold text-slate-500">حالة الاختيار</div>
+                    <div className="mt-1 font-semibold text-slate-800">{order.selectedOfferId ? 'تم اختيار عرض' : 'بانتظار قرارك'}</div>
+                  </div>
+                </div>
+
+                <div className="mt-5 text-left">
+                  <Link
+                    href={`/dashboard/offers/${encodeURIComponent(order.orderNumber)}`}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-[#0B132B] transition-colors hover:bg-slate-50"
+                  >
+                    <Eye size={14} />
+                    عرض العروض
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
-          <h2 className="text-lg font-bold text-[#111827]">لا توجد عروض جاهزة للمراجعة حالياً</h2>
-          <p className="mt-2 text-sm leading-7 text-slate-500">
-            عندما يبدأ الخبراء المدعوون بتقديم عروضهم على طلباتك، ستظهر هنا ليمكنك مقارنتها داخل بروز.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-          {orders.map((order) => (
-            <div key={order.orderNumber} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="text-xs font-bold text-[#06B6D4]">{order.orderNumber}</div>
-                  <h2 className="mt-2 text-lg font-bold text-[#111827]">{resolveServiceLabel(order.serviceType)}</h2>
-                  <p className="mt-1 text-sm text-slate-500">{order.storeName}</p>
-                </div>
-                <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${getOrderStatusStyle(order.status)}`}>
-                  {getOrderStatusLabel(order.status)}
-                </span>
-              </div>
-
-              <div className="mt-5 grid grid-cols-2 gap-3 text-sm text-slate-600">
-                <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                  <div className="text-[11px] font-bold text-slate-500">عدد العروض</div>
-                  <div className="mt-1 font-semibold text-slate-800">{order.offers.length}</div>
-                </div>
-                <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                  <div className="text-[11px] font-bold text-slate-500">حالة الاختيار</div>
-                  <div className="mt-1 font-semibold text-slate-800">{order.selectedOfferId ? 'تم اختيار عرض' : 'بانتظار قرارك'}</div>
-                </div>
-              </div>
-
-              <div className="mt-5 text-left">
-                <Link
-                  href={`/dashboard/offers/${encodeURIComponent(order.orderNumber)}`}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#06B6D4] px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#0891B2]"
-                >
-                  <Eye size={14} />
-                  عرض العروض
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+        )}
+      </OpsSurface>
     </div>
   );
 }

@@ -1,29 +1,57 @@
 import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { notFound, redirect } from 'next/navigation';
-import {
-  ArrowRight,
-  Calendar,
-  type LucideIcon,
-  Mail,
-  Phone,
-  ShoppingCart,
-  Store,
-  User,
-} from 'lucide-react';
+import { ArrowRight, Calendar, Mail, Phone, Store, User } from 'lucide-react';
 import prisma from '@/app/lib/prisma';
 import { authOptions } from '@/app/lib/auth';
 import { resolveServiceLabel } from '@/app/lib/services';
-import { formatCurrency, formatShortDate } from '@/app/lib/formatters';
+import { formatCurrency, formatDate, formatShortDate } from '@/app/lib/formatters';
 import { getOrderStatusLabel, getOrderStatusStyle } from '@/app/lib/order-status';
 import { getOrderMatchingServiceSlugs, getProviderDisplayName } from '@/app/lib/provider-opportunities';
-import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import RequestReviewActions from './RequestReviewActions';
 import InviteProvidersPanel from './InviteProvidersPanel';
 import CreateProjectFromOfferButton from './CreateProjectFromOfferButton';
+import { buildWorkflowCounts } from '@/app/lib/execution';
+import {
+  OpsBadge,
+  OpsMetaGrid,
+  OpsPageHeader,
+  OpsSectionHeader,
+  OpsSurface,
+  OpsWorkflowPipeline,
+} from '@/app/components/execution/OpsUI';
 
 function serviceLabel(serviceType: string) {
   return resolveServiceLabel(serviceType);
+}
+
+function getNextOpsAction(order: {
+  status: string;
+  selectedOfferId: string | null;
+  selectedOffer: { id: string; status: string } | null;
+  project: { id: string; status: string } | null;
+}) {
+  if (order.project) {
+    return 'تم إنشاء مشروع مرتبط بهذا الطلب. راقب التنفيذ وتدخل فقط إذا ظهرت حاجة تشغيلية أو تصعيد.';
+  }
+
+  if (order.selectedOfferId && order.selectedOffer?.status === 'ACCEPTED') {
+    return 'تم اختيار عرض ولكن لم يُنشأ مشروع بعد. الخطوة التالية هي إنشاء المشروع لتفعيل مسار التنفيذ.';
+  }
+
+  if (['APPROVED_FOR_OFFERS', 'COLLECTING_OFFERS'].includes(order.status)) {
+    return 'الطلب في مرحلة جمع العروض. راقب جودة الخبراء المدعوين وعدد العروض قبل أي تدخل إضافي.';
+  }
+
+  if (order.status === 'UNDER_REVIEW') {
+    return 'هذا الطلب يحتاج قرار مراجعة: اعتماد للعروض، طلب تعديل، أو رفض.';
+  }
+
+  if (order.status === 'NEEDS_CHANGES') {
+    return 'بانتظار التاجر لتحديث الطلب وإعادته إلى خط المراجعة.';
+  }
+
+  return 'ابدأ مراجعة الطلب وتحقق من جاهزيته لدخول مسار التنفيذ.';
 }
 
 export default async function AdminRequestDetailPage({ params }: { params: { id: string } }) {
@@ -211,82 +239,97 @@ export default async function AdminRequestDetailPage({ params }: { params: { id:
     };
   });
 
+  const pipelineSteps = buildWorkflowCounts([order.status]);
+
   return (
-    <div className="mx-auto max-w-6xl space-y-6 animate-fade-in">
-      <div className="flex flex-col gap-4 border-b border-slate-200/60 pb-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard/admin/requests"
-            className="rounded-xl border border-slate-200/80 bg-white p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
-            title="العودة لقائمة الطلبات"
-          >
-            <ArrowRight size={18} />
-          </Link>
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-bold text-[#111827]">{order.orderNumber}</h1>
-              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${getOrderStatusStyle(order.status)}`}>
-                {statusLabel}
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-slate-500">
-              مراجعة طلب خدمة قبل إتاحته لأي مزود خدمة.
-            </p>
-          </div>
-        </div>
+    <div className="mx-auto max-w-7xl space-y-6 animate-fade-in">
+      <div className="flex justify-start">
+        <Link
+          href="/dashboard/admin/requests"
+          className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#0B132B] transition-colors hover:bg-slate-50"
+        >
+          <ArrowRight size={16} />
+          العودة إلى صف الطلبات
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <Card className="border border-slate-200/80 shadow-sm">
-            <CardHeader className="flex items-center gap-2 border-b border-slate-200/60 bg-slate-50/50 px-6 py-4">
-              <ShoppingCart size={18} className="text-[#06B6D4]" />
-              <h2 className="text-sm font-bold text-[#111827]">تفاصيل الطلب</h2>
-            </CardHeader>
-            <CardBody className="space-y-5 p-6">
+      <OpsPageHeader
+        eyebrow={order.orderNumber}
+        title="مراجعة الطلب"
+        description="هذه الصفحة هي مركز القرار التشغيلي للطلب: تقييم الجاهزية، تحديد الحالة، دعوة الخبراء، ثم نقل الطلب إلى التنفيذ عند اكتمال شروطه."
+        actions={<span className={`rounded-full px-3 py-1 text-xs font-bold ${getOrderStatusStyle(order.status)}`}>{statusLabel}</span>}
+      >
+        <OpsBadge tone="slate" label={serviceLabel(order.serviceType)} />
+        <OpsBadge tone="cyan" label={order.storeName} />
+      </OpsPageHeader>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.15fr)_360px]">
+        <div className="space-y-6">
+          <OpsSurface>
+            <OpsSectionHeader title="الموقع الحالي في المسار" description="يتحرك الطلب من المراجعة إلى العروض ثم الاختيار والتنفيذ. هذه الشاشة مسؤولة عن أول انتقالات المسار." />
+            <OpsWorkflowPipeline steps={pipelineSteps} />
+          </OpsSurface>
+
+          <OpsSurface>
+            <OpsSectionHeader title="تفاصيل الطلب" description="المعطيات الأساسية التي تُبنى عليها قرارات الإدارة بشأن جاهزية الطلب للعروض والتنفيذ." />
+            <div className="space-y-5 p-6">
+              <OpsMetaGrid
+                items={[
+                  { label: 'نوع الخدمة', value: serviceLabel(order.serviceType) },
+                  { label: 'الميزانية', value: order.budget ? formatCurrency(order.budget) : 'قيد التقدير' },
+                  { label: 'الأولوية', value: order.priority },
+                  { label: 'الحالة', value: statusLabel },
+                  { label: 'تاريخ الإنشاء', value: formatDate(order.createdAt) },
+                  { label: 'آخر تحديث', value: formatDate(order.updatedAt) },
+                ]}
+              />
+
+              <InfoBlock label="وصف الطلب" value={order.description} />
+              {order.notes ? <InfoBlock label="ملاحظات إضافية" value={order.notes} /> : null}
+            </div>
+          </OpsSurface>
+
+          <OpsSurface>
+            <OpsSectionHeader title="بيانات التاجر والمتجر" description="مرجع تشغيلي للإدارة أثناء المراجعة، دون أي تغيير على الصلاحيات أو قنوات التواصل الحالية." />
+            <div className="p-6">
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <InfoItem label="نوع الخدمة" value={serviceLabel(order.serviceType)} />
-                <InfoItem label="الميزانية" value={order.budget ? formatCurrency(order.budget) : 'قيد التقدير'} />
-                <InfoItem label="الأولوية" value={order.priority} />
-                <InfoItem label="الحالة" value={statusLabel} />
-                <InfoItem label="تاريخ الإنشاء" value={formatShortDate(order.createdAt).replace(/-/g, '/')} />
-                <InfoItem label="آخر تحديث" value={formatShortDate(order.updatedAt).replace(/-/g, '/')} />
+                <IconInfo icon={User} label="التاجر" value={order.managerName} />
+                <IconInfo icon={Store} label="المتجر" value={order.storeName} />
+                <IconInfo icon={Mail} label="البريد" value={order.email || 'غير متوفر'} />
+                <IconInfo icon={Phone} label="الجوال" value={order.phone || 'غير متوفر'} ltr />
+                <IconInfo icon={Calendar} label="رابط المتجر" value={order.sallaUrl || 'غير متوفر'} />
               </div>
+            </div>
+          </OpsSurface>
 
-              <div>
-                <span className="mb-1 block text-[10px] font-bold text-slate-500">وصف الطلب</span>
-                <p className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-xs leading-relaxed text-slate-700">
-                  {order.description}
-                </p>
-              </div>
-
-              {order.notes && (
-                <div>
-                  <span className="mb-1 block text-[10px] font-bold text-slate-500">ملاحظات إضافية</span>
-                  <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50/40 p-4 text-xs leading-relaxed text-slate-700">
-                    {order.notes}
-                  </p>
-                </div>
-              )}
-            </CardBody>
-          </Card>
-
-          <Card className="border border-slate-200/80 shadow-sm">
-            <CardHeader className="flex items-center gap-2 border-b border-slate-200/60 bg-slate-50/50 px-6 py-4">
-              <Store size={18} className="text-[#06B6D4]" />
-              <h2 className="text-sm font-bold text-[#111827]">بيانات التاجر والمتجر</h2>
-            </CardHeader>
-            <CardBody className="grid grid-cols-1 gap-5 p-6 sm:grid-cols-2">
-              <IconInfo icon={User} label="التاجر" value={order.managerName} />
-              <IconInfo icon={Store} label="المتجر" value={order.storeName} />
-              <IconInfo icon={Mail} label="البريد" value={order.email || 'غير متوفر'} />
-              <IconInfo icon={Phone} label="الجوال" value={order.phone || 'غير متوفر'} ltr />
-              <IconInfo icon={Calendar} label="رابط المتجر" value={order.sallaUrl || 'غير متوفر'} />
-            </CardBody>
-          </Card>
+          <InviteProvidersPanel
+            orderNumber={order.orderNumber}
+            requestStatus={order.status}
+            providers={providerInvitationRows}
+          />
         </div>
 
         <div className="space-y-6">
+          <OpsSurface>
+            <OpsSectionHeader title="الخطوة التالية" description="ما الذي يحتاجه هذا الطلب الآن حتى يتقدم داخل صف التشغيل." />
+            <div className="space-y-4 p-6">
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-600">
+                {getNextOpsAction(order)}
+              </div>
+              {!order.project && order.selectedOfferId && order.selectedOffer?.status === 'ACCEPTED' ? (
+                <CreateProjectFromOfferButton orderNumber={order.orderNumber} />
+              ) : null}
+              {order.project ? (
+                <Link
+                  href={`/dashboard/projects/${order.project.id}`}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0B132B] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#16213C]"
+                >
+                  فتح المشروع
+                </Link>
+              ) : null}
+            </div>
+          </OpsSurface>
+
           <RequestReviewActions
             orderNumber={order.orderNumber}
             currentStatus={statusLabel}
@@ -295,73 +338,45 @@ export default async function AdminRequestDetailPage({ params }: { params: { id:
             initialInternalNote={order.internalNote}
           />
 
-          <InviteProvidersPanel
-            orderNumber={order.orderNumber}
-            requestStatus={order.status}
-            providers={providerInvitationRows}
-          />
-
-          <Card className="border border-slate-200/80 shadow-sm">
-            <CardHeader className="border-b border-slate-200/60 bg-white px-5 py-4">
-              <h2 className="text-sm font-bold text-[#111827]">سجل المراجعة</h2>
-            </CardHeader>
-            <CardBody className="space-y-3 p-5 text-xs text-slate-600">
-              <InfoItem label="راجع بواسطة" value={reviewerName} />
-              <InfoItem
-                label="تاريخ المراجعة"
-                value={order.reviewedAt ? formatShortDate(order.reviewedAt).replace(/-/g, '/') : 'لم تتم المراجعة بعد'}
+          <OpsSurface>
+            <OpsSectionHeader title="سجل المراجعة" description="ملاحظات المراجعة الحالية وحالة الانتقال إلى المشروع أو التاجر أو العروض." />
+            <div className="space-y-4 p-6 text-sm text-slate-600">
+              <OpsMetaGrid
+                columns={2}
+                items={[
+                  { label: 'راجع بواسطة', value: reviewerName },
+                  { label: 'تاريخ المراجعة', value: order.reviewedAt ? formatDate(order.reviewedAt) : 'لم تتم المراجعة بعد' },
+                ]}
               />
-              {order.adminNote && <InfoBlock label="ملاحظة للتاجر" value={order.adminNote} />}
-              {order.internalNote && <InfoBlock label="ملاحظة داخلية" value={order.internalNote} />}
+              {order.adminNote ? <InfoBlock label="ملاحظة للتاجر" value={order.adminNote} tone="amber" /> : null}
+              {order.internalNote ? <InfoBlock label="ملاحظة داخلية" value={order.internalNote} /> : null}
               {!order.project && order.selectedOfferId && order.selectedOffer?.status === 'ACCEPTED' ? (
-                <div className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3">
-                  <span className="mb-1 block text-[10px] font-bold text-violet-700">مرحلة التنفيذ</span>
-                  <p className="text-xs leading-relaxed text-violet-900">
-                    تم اختيار العرض، لكن لم يتم إنشاء مشروع بعد.
-                  </p>
-                  <div className="mt-3">
-                    <CreateProjectFromOfferButton orderNumber={order.orderNumber} />
-                  </div>
+                <div className="rounded-[24px] border border-violet-200 bg-violet-50 px-4 py-4 text-sm leading-7 text-violet-900">
+                  تم اختيار العرض، لكن لم يتم إنشاء مشروع بعد.
                 </div>
               ) : null}
               {order.project ? (
-                <div className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3">
-                  <span className="mb-1 block text-[10px] font-bold text-violet-700">مرحلة التنفيذ</span>
-                  <p className="text-xs leading-relaxed text-violet-900">
-                    تم إنشاء مشروع لهذا الطلب ويمكن متابعة kickoff من صفحة المشاريع.
-                  </p>
-                  <Link
-                    href={`/dashboard/projects/${order.project.id}`}
-                    className="mt-3 inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-white px-3 py-1.5 text-[10px] font-bold text-violet-800 transition-colors hover:bg-violet-100"
-                  >
-                    فتح المشروع
-                  </Link>
+                <div className="rounded-[24px] border border-violet-200 bg-violet-50 px-4 py-4 text-sm leading-7 text-violet-900">
+                  تم إنشاء مشروع لهذا الطلب ويمكن متابعة التنفيذ من صفحة المشروع.
                 </div>
               ) : null}
-            </CardBody>
-          </Card>
+            </div>
+          </OpsSurface>
         </div>
       </div>
     </div>
   );
 }
 
-function InfoItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <span className="mb-1 block text-[10px] font-bold text-slate-500">{label}</span>
-      <span className="text-sm font-bold text-[#111827]">{value}</span>
-    </div>
-  );
-}
+function InfoBlock({ label, value, tone = 'slate' }: { label: string; value: string; tone?: 'slate' | 'amber' }) {
+  const style = tone === 'amber'
+    ? 'border-amber-200 bg-amber-50 text-amber-800'
+    : 'border-slate-200 bg-slate-50 text-slate-700';
 
-function InfoBlock({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <span className="mb-1 block text-[10px] font-bold text-slate-500">{label}</span>
-      <p className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs leading-relaxed text-slate-700">
-        {value}
-      </p>
+      <span className="mb-2 block text-[11px] font-bold text-slate-500">{label}</span>
+      <p className={`rounded-2xl border p-4 text-sm leading-7 ${style}`}>{value}</p>
     </div>
   );
 }
@@ -372,22 +387,18 @@ function IconInfo({
   value,
   ltr = false,
 }: {
-  icon: LucideIcon;
+  icon: typeof User;
   label: string;
   value: string;
   ltr?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="rounded-lg bg-slate-100 p-2 text-slate-600">
-        <Icon size={16} />
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+      <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+        <Icon size={14} />
+        {label}
       </div>
-      <div className="min-w-0">
-        <span className="block text-[9px] font-bold text-slate-500">{label}</span>
-        <span className="block truncate text-xs font-semibold text-slate-800" style={ltr ? { direction: 'ltr' } : undefined}>
-          {value}
-        </span>
-      </div>
+      <div className={`mt-2 text-sm font-semibold text-[#0B132B] ${ltr ? 'direction-ltr text-left' : 'break-words'}`}>{value}</div>
     </div>
   );
 }

@@ -1,275 +1,435 @@
-'use client';
-
-import React from 'react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
-import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { ClipboardList, FolderKanban, Plus } from 'lucide-react';
+import prisma from '@/app/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { getProviderDisplayName } from '@/app/lib/provider-opportunities';
+import { getOrderStatusLabel } from '@/app/lib/order-status';
+import { getProjectStatusLabel } from '@/app/lib/project-utils';
+import { resolveServiceLabel } from '@/app/lib/services';
 import {
-  ShoppingCart,
-  FolderOpen,
-  Plus,
-  AlertCircle,
-  ArrowUpRight,
-  Briefcase,
-} from 'lucide-react';
-import { Order } from '@/app/lib/demo-data';
-import { getDashboardOrdersSummary } from '@/app/lib/orders-api';
+  buildWorkflowCounts,
+  formatRelativeTime,
+  getProjectHealth,
+  getProjectProgress,
+} from '@/app/lib/execution';
+import {
+  OpsBadge,
+  OpsEmptyState,
+  OpsHealthBadge,
+  OpsPageHeader,
+  OpsProgressBar,
+  OpsSectionHeader,
+  OpsSurface,
+  OpsTimeline,
+  OpsWorkflowPipeline,
+} from '@/app/components/execution/OpsUI';
 
-// ── Icon map ──────────────────────────────────────────────────
-const IconMap = {
-  ShoppingCart,
-  FolderOpen,
-  AlertCircle,
-};
-
-// ── Role-based welcome header ─────────────────────────────────
-function DashboardHeader({ name, role }: { name?: string | null; role?: string }) {
-  if (role === 'ADMIN') {
-    return (
-      <div>
-        <p className="text-xs font-semibold text-[#06B6D4] mb-1 tracking-wide uppercase">
-          لوحة تحكم الإدارة
-        </p>
-        <h2 className="text-xl md:text-2xl font-bold text-[#111827]">أهلاً مسؤول بروز</h2>
-        <p className="text-xs md:text-sm text-[#475569] mt-1.5">
-          إدارة مقدمي الخدمة، الطلبات، المشاريع، ومراجعة نشاط المنصة.
-        </p>
-      </div>
-    );
+function getTimelineTone(type?: string | null) {
+  switch (type) {
+    case 'OFFER_RECEIVED':
+      return 'cyan';
+    case 'PROJECT_CREATED':
+    case 'PROJECT_STARTED':
+      return 'indigo';
+    case 'DELIVERY_SUBMITTED':
+      return 'emerald';
+    case 'DELIVERY_REVISION_REQUESTED':
+      return 'amber';
+    default:
+      return 'slate';
   }
-
-  if (role === 'PROVIDER') {
-    const greeting = name ? `أهلاً ${name}` : 'أهلاً مقدم الخدمة';
-    return (
-      <div>
-        <p className="text-xs font-semibold text-[#06B6D4] mb-1 tracking-wide uppercase">
-          لوحة تحكم مقدم الخدمة
-        </p>
-        <h2 className="text-xl md:text-2xl font-bold text-[#111827]">{greeting}</h2>
-        <p className="text-xs md:text-sm text-[#475569] mt-1.5">
-          تابع الطلبات المناسبة، عروضك، ومشاريعك داخل بروز.
-        </p>
-      </div>
-    );
-  }
-
-  // Default: MERCHANT
-  const greeting = name ? `أهلاً تاجرنا، ${name}` : 'أهلاً تاجرنا';
-  return (
-    <div>
-      <p className="text-xs font-semibold text-[#06B6D4] mb-1 tracking-wide uppercase">
-        لوحة تحكم التاجر
-      </p>
-      <h2 className="text-xl md:text-2xl font-bold text-[#111827]">{greeting}</h2>
-      <p className="text-xs md:text-sm text-[#475569] mt-1.5">
-        تابع طلباتك ومراجعة بروز من مكان واحد.
-      </p>
-    </div>
-  );
 }
 
-// ── Main dashboard page ───────────────────────────────────────
-export default function DashboardPage() {
-  const { data: session } = useSession();
-  const globalRole = session?.user?.globalRole;
-  const userName = session?.user?.name;
+async function getMerchantExecutionCenter(userId: string) {
+  const [ordersWithOffers, clarificationOrders, deliveryProjects, activeProjects, orderStatuses, notifications, recentOrders, recentDeliveries] =
+    await Promise.all([
+      prisma.order.findMany({
+        where: {
+          userId,
+          selectedOfferId: null,
+          status: { in: ['APPROVED_FOR_OFFERS', 'COLLECTING_OFFERS', 'OFFER_SELECTED'] },
+          offers: { some: { status: 'SUBMITTED' } },
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: 4,
+        select: {
+          orderNumber: true,
+          storeName: true,
+          serviceType: true,
+          updatedAt: true,
+          offers: {
+            where: { status: 'SUBMITTED' },
+            select: { id: true },
+          },
+        },
+      }),
+      prisma.order.findMany({
+        where: { userId, status: 'NEEDS_CHANGES' },
+        orderBy: { updatedAt: 'desc' },
+        take: 4,
+        select: {
+          orderNumber: true,
+          storeName: true,
+          serviceType: true,
+          adminNote: true,
+          updatedAt: true,
+        },
+      }),
+      prisma.project.findMany({
+        where: {
+          deletedAt: null,
+          status: 'DELIVERED',
+          order: { userId },
+          deliveries: { some: { status: 'SUBMITTED' } },
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: 4,
+        select: {
+          id: true,
+          name: true,
+          updatedAt: true,
+          deliveries: {
+            where: { status: 'SUBMITTED' },
+            orderBy: { submittedAt: 'desc' },
+            take: 1,
+            select: { submittedAt: true },
+          },
+        },
+      }),
+      prisma.project.findMany({
+        where: {
+          deletedAt: null,
+          order: { userId },
+          status: {
+            in: ['KICKOFF_PENDING', 'PENDING', 'ACTIVE', 'IN_PROGRESS', 'PAUSED', 'ON_HOLD', 'DELIVERED', 'REVISION_REQUESTED'],
+          },
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: 6,
+        select: {
+          id: true,
+          name: true,
+          status: true,
+          updatedAt: true,
+          dueDate: true,
+          order: {
+            select: {
+              orderNumber: true,
+              storeName: true,
+              serviceType: true,
+            },
+          },
+          acceptedOffer: {
+            select: {
+              expertProfile: {
+                select: {
+                  specialtyTitle: true,
+                  user: { select: { name: true } },
+                },
+              },
+            },
+          },
+        },
+      }),
+      prisma.order.findMany({
+        where: { userId },
+        select: { status: true },
+      }),
+      prisma.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 8,
+        select: {
+          id: true,
+          title: true,
+          message: true,
+          url: true,
+          createdAt: true,
+          type: true,
+        },
+      }),
+      prisma.order.findMany({
+        where: { userId },
+        orderBy: { updatedAt: 'desc' },
+        take: 4,
+        select: {
+          orderNumber: true,
+          serviceType: true,
+          status: true,
+          updatedAt: true,
+        },
+      }),
+      prisma.projectDelivery.findMany({
+        where: {
+          project: {
+            deletedAt: null,
+            order: { userId },
+          },
+        },
+        orderBy: { submittedAt: 'desc' },
+        take: 4,
+        select: {
+          id: true,
+          submittedAt: true,
+          status: true,
+          project: { select: { id: true, name: true } },
+        },
+      }),
+    ]);
 
-  const [stats, setStats] = React.useState([
-    { label: 'طلبات جديدة',   value: '0', iconName: 'FolderOpen'  },
-    { label: 'قيد المراجعة',  value: '0', iconName: 'AlertCircle' },
-  ]);
-  const [recentOrders, setRecentOrders] = React.useState<Order[]>([]);
+  const attentionItems = [
+    ...ordersWithOffers.map((order) => ({
+      id: `offer-${order.orderNumber}`,
+      tone: 'cyan' as const,
+      status: 'عرض جديد بانتظار قرارك',
+      projectName: `${order.storeName} - ${resolveServiceLabel(order.serviceType)}`,
+      requiredAction: `راجع ${order.offers.length} عروض جديدة وحدد العرض الأنسب لبدء التنفيذ.`,
+      dueTime: formatRelativeTime(order.updatedAt),
+      href: `/dashboard/offers/${encodeURIComponent(order.orderNumber)}`,
+      actionLabel: 'مراجعة العروض',
+    })),
+    ...deliveryProjects.map((project) => ({
+      id: `delivery-${project.id}`,
+      tone: 'emerald' as const,
+      status: 'تسليم بانتظار الاعتماد',
+      projectName: project.name,
+      requiredAction: 'راجع التسليم الحالي ثم اختر الاعتماد أو طلب تعديل.',
+      dueTime: formatRelativeTime(project.deliveries[0]?.submittedAt || project.updatedAt),
+      href: `/dashboard/projects/${project.id}?tab=deliveries`,
+      actionLabel: 'مراجعة التسليم',
+    })),
+    ...clarificationOrders.map((order) => ({
+      id: `changes-${order.orderNumber}`,
+      tone: 'amber' as const,
+      status: 'طلب يحتاج توضيحاً',
+      projectName: `${order.storeName} - ${resolveServiceLabel(order.serviceType)}`,
+      requiredAction: order.adminNote || 'حدّث تفاصيل الطلب ثم أعد إرساله للمراجعة.',
+      dueTime: formatRelativeTime(order.updatedAt),
+      href: `/dashboard/orders/${encodeURIComponent(order.orderNumber)}/edit`,
+      actionLabel: 'تحديث الطلب',
+    })),
+  ].sort((a, b) => a.dueTime.localeCompare(b.dueTime));
 
-  React.useEffect(() => {
-    async function loadDashboardData() {
-      try {
-        const summary = await getDashboardOrdersSummary();
-        const newCount = summary.counts.SUBMITTED || 0;
-        const reviewCount = summary.counts.UNDER_REVIEW || 0;
-
-        setStats([
-          { label: 'طلبات جديدة',   value: String(newCount),    iconName: 'FolderOpen'  },
-          { label: 'قيد المراجعة',  value: String(reviewCount), iconName: 'AlertCircle' },
-        ]);
-
-        setRecentOrders(summary.recentOrders);
-      } catch (error) {
-        console.warn('Failed to load real data', error);
-      }
-    }
-    loadDashboardData();
-  }, []);
-
-  const quickActions = [
-    { label: 'طلب خدمة جديد', href: '/request',          icon: Plus,         color: 'text-white bg-[#06B6D4] hover:bg-[#0891B2] shadow-sm' },
-    { label: 'إدارة طلباتي',   href: '/dashboard/orders', icon: ShoppingCart, color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
-    { label: 'العروض',         href: '/dashboard/offers', icon: Briefcase,    color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
-    { label: 'المشاريع',       href: '/dashboard/projects', icon: FolderOpen,  color: 'text-[#111827] bg-slate-50 border border-slate-200 hover:bg-slate-100' },
+  const fallbackTimelineItems = [
+    ...recentOrders.map((order) => ({
+      id: `order-${order.orderNumber}`,
+      createdAt: order.updatedAt,
+      title: `تحديث على الطلب ${order.orderNumber}`,
+      description: `${getOrderStatusLabel(order.status)} - ${resolveServiceLabel(order.serviceType)}`,
+      href: `/dashboard/orders/${encodeURIComponent(order.orderNumber)}`,
+      tone: 'slate' as const,
+    })),
+    ...recentDeliveries.map((delivery) => ({
+      id: `delivery-feed-${delivery.id}`,
+      createdAt: delivery.submittedAt,
+      title: 'تم رفع تسليم جديد',
+      description: delivery.project.name,
+      href: `/dashboard/projects/${delivery.project.id}?tab=deliveries`,
+      tone: delivery.status === 'REVISION_REQUESTED' ? ('amber' as const) : ('emerald' as const),
+    })),
   ];
 
-  const getStatusStyle = (status: Order['status']) => {
-    switch (status) {
-      case 'مكتمل':         return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-      case 'معتمد للعروض':   return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-      case 'قيد المراجعة':   return 'bg-[#06B6D4]/10 text-[#06B6D4] border border-[#06B6D4]/20';
-      case 'بحاجة إلى تعديل': return 'bg-amber-50 text-amber-700 border border-amber-200';
-      case 'بانتظار مراجعة بروز':          return 'bg-blue-50 text-blue-700 border border-blue-200';
-      case 'مرفوض':          return 'bg-red-50 text-red-700 border border-red-200';
-      default:              return 'bg-slate-50 text-slate-600 border border-slate-200';
-    }
+  const timelineItems = (notifications.length > 0
+    ? notifications.map((item) => ({
+        id: item.id,
+        createdAt: item.createdAt,
+        title: item.title,
+        description: item.message,
+        href: item.url,
+        tone: getTimelineTone(item.type) as 'slate' | 'cyan' | 'indigo' | 'emerald' | 'amber',
+      }))
+    : fallbackTimelineItems
+  )
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 8)
+    .map((item) => ({
+      ...item,
+      time: formatRelativeTime(item.createdAt),
+    }));
+
+  return {
+    attentionItems,
+    activeProjects,
+    pipelineSteps: buildWorkflowCounts(orderStatuses.map((item) => item.status)),
+    timelineItems,
   };
+}
+
+export default async function DashboardPage() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    redirect('/login');
+  }
+
+  if (session.user.globalRole === 'ADMIN') {
+    redirect('/dashboard/admin');
+  }
+
+  if (session.user.globalRole === 'PROVIDER') {
+    redirect('/dashboard/provider');
+  }
+
+  const data = await getMerchantExecutionCenter(session.user.id);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
+      <OpsPageHeader
+        eyebrow="Execution Center"
+        title="مركز تنفيذ المتجر"
+        description="تابع الطلبات والعروض والمشاريع والتسليمات من مكان واحد."
+        actions={
+          <Link
+            href="/dashboard/orders/new"
+            className="inline-flex items-center gap-2 rounded-2xl bg-[#0B132B] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#16213C]"
+          >
+            <Plus size={16} />
+            طلب خدمة جديد
+          </Link>
+        }
+      >
+        <OpsBadge tone="slate" label="BOROZ manages execution" />
+        <OpsBadge tone="cyan" label="مركز تنفيذ ونمو المتجر" />
+      </OpsPageHeader>
 
-      {/* ── Welcome Header (role-aware) ────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/60 pb-5">
-        <DashboardHeader name={userName} role={globalRole} />
-        <div className="flex items-center gap-2 text-xs font-semibold text-[#64748B] bg-white border border-slate-200/80 rounded-xl px-3.5 py-2 shadow-sm shrink-0">
-          <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
-          <span>محدث تلقائياً</span>
-        </div>
-      </div>
+      <OpsSurface>
+        <OpsSectionHeader
+          title="يحتاج انتباهك الآن"
+          description="العناصر التي تتطلب قراراً أو تحديثاً من طرفك حتى يستمر التنفيذ بدون تأخير."
+        />
+        {data.attentionItems.length === 0 ? (
+          <OpsEmptyState
+            icon={ClipboardList}
+            title="لا توجد عناصر عالقة الآن"
+            description="كل ما يخص متجرك يتحرك بشكل طبيعي حالياً. ستظهر هنا فقط القرارات أو المراجعات التي تتطلب تدخلك."
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 p-6 xl:grid-cols-2">
+            {data.attentionItems.map((item) => (
+              <div key={item.id} className="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="space-y-2">
+                    <OpsBadge tone={item.tone} label={item.status} />
+                    <h3 className="text-base font-bold text-[#0B132B]">{item.projectName}</h3>
+                  </div>
+                  <div className="text-xs font-medium text-slate-400">{item.dueTime}</div>
+                </div>
+                <p className="mt-4 text-sm leading-7 text-slate-600">{item.requiredAction}</p>
+                <div className="mt-5 flex items-center justify-between gap-3">
+                  <div className="text-xs font-medium text-slate-500">الخطوة التالية: {item.actionLabel}</div>
+                  <Link
+                    href={item.href}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#0B132B] transition-colors hover:bg-slate-100"
+                  >
+                    {item.actionLabel}
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </OpsSurface>
 
-      {/* ── Stats Grid ────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {stats.map((stat, idx) => {
-          const Icon = IconMap[stat.iconName as keyof typeof IconMap] || FolderOpen;
-          return (
-            <Card key={idx} className="border border-slate-200/80 hover:shadow-md transition-shadow">
-              <CardBody className="p-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[#64748B]">{stat.label}</span>
-                  <div className="w-9 h-9 rounded-xl bg-[#0F172A]/5 flex items-center justify-center text-[#0F172A]">
-                    <Icon size={18} />
+      <OpsSurface>
+        <OpsSectionHeader
+          title="المشاريع النشطة"
+          description="تنفيذ المشاريع الجارية مع المرحلة الحالية، الخبير المسؤول، وصحة التنفيذ."
+          action={
+            <Link href="/dashboard/projects" className="text-sm font-semibold text-[#06B6D4] hover:text-[#0891B2]">
+              عرض جميع المشاريع
+            </Link>
+          }
+        />
+        {data.activeProjects.length === 0 ? (
+          <OpsEmptyState
+            icon={FolderKanban}
+            title="لا توجد مشاريع نشطة بعد"
+            description="سيظهر التنفيذ هنا بعد اختيار عرض والانتقال من مرحلة الطلب إلى مرحلة المشروع."
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 p-6 xl:grid-cols-2">
+            {data.activeProjects.map((project) => {
+              const health = getProjectHealth({ status: project.status, dueDate: project.dueDate });
+              const progress = getProjectProgress(project.status);
+              const assignedExpert = project.acceptedOffer?.expertProfile
+                ? getProviderDisplayName(project.acceptedOffer.expertProfile)
+                : 'خبير بروز';
+
+              return (
+                <div key={project.id} className="rounded-[24px] border border-slate-200 bg-white p-5">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          {project.order.orderNumber}
+                        </div>
+                        <h3 className="mt-2 text-lg font-bold text-[#0B132B]">{project.name}</h3>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {project.order.storeName} - {resolveServiceLabel(project.order.serviceType)}
+                        </p>
+                      </div>
+                      <OpsHealthBadge health={health} />
+                    </div>
+
+                    <OpsProgressBar value={progress} label="Progress %" />
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <div className="text-[11px] font-semibold text-slate-500">Current Phase</div>
+                        <div className="mt-2 text-sm font-semibold text-[#0B132B]">{getProjectStatusLabel(project.status)}</div>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <div className="text-[11px] font-semibold text-slate-500">Assigned Expert</div>
+                        <div className="mt-2 text-sm font-semibold text-[#0B132B]">{assignedExpert}</div>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <div className="text-[11px] font-semibold text-slate-500">Last Update</div>
+                        <div className="mt-2 text-sm font-semibold text-[#0B132B]">{formatRelativeTime(project.updatedAt)}</div>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <div className="text-[11px] font-semibold text-slate-500">Project Health</div>
+                        <div className="mt-2 text-sm font-semibold text-[#0B132B]">{health}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Link
+                        href={`/dashboard/projects/${project.id}`}
+                        className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-[#0B132B] transition-colors hover:bg-slate-50"
+                      >
+                        فتح المشروع
+                      </Link>
+                    </div>
                   </div>
                 </div>
-                <div className="mt-4">
-                  <h3 className="text-2xl font-bold text-[#111827] leading-none">{stat.value}</h3>
-                </div>
-              </CardBody>
-            </Card>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
+        )}
+      </OpsSurface>
 
-      {/* ── Main Grid ─────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]">
+        <OpsSurface>
+          <OpsSectionHeader
+            title="سجل التنفيذ"
+            description="تسلسل زمني لأهم ما حدث في الطلبات والمشاريع داخل بروز."
+          />
+          <OpsTimeline
+            items={data.timelineItems}
+            emptyTitle="لم يبدأ السجل بعد"
+            emptyDescription="عندما يبدأ تدفق الطلبات والعروض والتسليمات، ستظهر هنا آخر التحديثات التشغيلية."
+          />
+        </OpsSurface>
 
-        {/* Recent Orders */}
-        <div className="lg:col-span-2">
-          <Card className="border border-slate-200/80 shadow-sm overflow-hidden">
-            <CardHeader className="flex justify-between items-center bg-white border-b border-slate-200/80 px-6 py-4">
-              <h3 className="font-bold text-sm text-[#111827]">آخر الطلبات</h3>
-              <Link href="/dashboard/orders" className="text-xs text-[#06B6D4] font-semibold hover:underline flex items-center gap-1">
-                عرض الكل <ArrowUpRight size={14} />
-              </Link>
-            </CardHeader>
-            <div className="overflow-x-auto w-full">
-              <table className="w-full text-right border-collapse text-xs min-w-[500px]">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-500 border-b border-slate-200/80">
-                    <th className="px-6 py-3 font-semibold">رقم الطلب</th>
-                    <th className="px-6 py-3 font-semibold">المتجر</th>
-                    <th className="px-6 py-3 font-semibold">الخدمة</th>
-                    <th className="px-6 py-3 font-semibold text-left">القيمة</th>
-                    <th className="px-6 py-3 font-semibold text-center">الحالة</th>
-                    <th className="px-6 py-3 font-semibold">التاريخ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {recentOrders.length > 0 ? (
-                    recentOrders.map((order) => (
-                      <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-3.5 font-bold text-[#111827]">
-                          <Link href={`/dashboard/orders/${order.id}`} className="hover:text-[#06B6D4] hover:underline">
-                            {order.id}
-                          </Link>
-                        </td>
-                        <td className="px-6 py-3.5 font-semibold text-slate-700">{order.storeName}</td>
-                        <td className="px-6 py-3.5 text-slate-600">{order.serviceLabel}</td>
-                        <td className="px-6 py-3.5 text-left font-bold text-[#111827]">{order.price}</td>
-                        <td className="px-6 py-3.5 text-center">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${getStatusStyle(order.status)}`}>
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-3.5 text-slate-500 whitespace-nowrap">{order.date}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center">
-                        <div className="flex flex-col items-center justify-center space-y-4">
-                          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
-                            <ShoppingCart size={32} />
-                          </div>
-                          <div className="space-y-1">
-                            <h4 className="font-bold text-slate-700">لا توجد طلبات حتى الآن</h4>
-                            <p className="text-sm text-slate-500 max-w-sm mx-auto">
-                              ابدأ بإرسال طلب خدمة ليقوم فريق بروز بمراجعته وتوجيهه للمستقل المناسب.
-                            </p>
-                          </div>
-                          <Link href="/request" className="btn-primary mt-2">
-                            <Plus size={18} />
-                            إنشاء طلب خدمة
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
-
-        {/* Side: Quick Actions + Alert */}
-        <div className="space-y-6">
-
-          <Card className="border border-slate-200/80 shadow-sm">
-            <CardHeader className="bg-white border-b border-slate-200/80 px-6 py-4">
-              <h3 className="font-bold text-sm text-[#111827]">الإجراءات السريعة</h3>
-            </CardHeader>
-            <CardBody className="p-6">
-              <div className="grid grid-cols-2 gap-3">
-                {quickActions.map((action, idx) => {
-                  const Icon = action.icon;
-                  return (
-                    <Link
-                      key={idx}
-                      href={action.href}
-                      className={`flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200/60 shadow-sm transition-all text-center hover:-translate-y-0.5 ${action.color}`}
-                    >
-                      <Icon className="mb-2" size={20} />
-                      <span className="text-xs font-bold">{action.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card className="border border-slate-200/80 shadow-sm">
-            <CardHeader className="bg-white border-b border-slate-200/80 px-6 py-4">
-              <h3 className="font-bold text-sm text-[#111827]">تنبيهات مهمة</h3>
-            </CardHeader>
-            <CardBody className="p-4">
-              <div className="p-3 border rounded-xl flex gap-3 border-blue-200 bg-blue-50/50">
-                <div className="text-blue-500 shrink-0 mt-0.5">
-                  <AlertCircle size={18} />
-                </div>
-                <div className="space-y-1">
-                  <h4 className="font-bold text-xs text-blue-900 leading-none">مرحباً بك في بروز</h4>
-                  <p className="text-[10px] text-blue-700 leading-relaxed">
-                    يمكنك الآن البدء بإضافة طلب خدمة جديد ليقوم فريقنا بمراجعته وتوجيهه.
-                  </p>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-
-        </div>
+        <OpsSurface>
+          <OpsSectionHeader
+            title="نظرة على خط التنفيذ"
+            description="توزيع طلباتك الحالية على مراحل التشغيل من الطلب وحتى الإكمال."
+          />
+          <OpsWorkflowPipeline steps={data.pipelineSteps} />
+        </OpsSurface>
       </div>
     </div>
   );

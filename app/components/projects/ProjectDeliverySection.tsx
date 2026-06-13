@@ -148,7 +148,7 @@ export function ProjectDeliverySection({
   return (
     <div className="space-y-4">
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
           <AlertCircle size={16} />
           {error}
         </div>
@@ -157,7 +157,7 @@ export function ProjectDeliverySection({
       {canSubmit && !showSubmitForm && (
         <button
           onClick={() => setShowSubmitForm(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#06B6D4] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#0598B4]"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0B132B] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#16213C]"
         >
           <Send size={16} />
           تسليم العمل
@@ -165,15 +165,15 @@ export function ProjectDeliverySection({
       )}
 
       {showSubmitForm && (
-        <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-4 text-sm font-bold text-[#111827]">تسليم العمل</div>
+        <form onSubmit={handleSubmit} className="rounded-[24px] border border-slate-200 bg-[#F8FAFC] p-6">
+          <div className="mb-4 text-sm font-bold text-[#0B132B]">تسليم العمل</div>
           <div className="space-y-4">
             <div>
               <label className="mb-1 block text-xs font-bold text-slate-500">عنوان التسليم</label>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#06B6D4] focus:ring-1 focus:ring-[#06B6D4]"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-[#06B6D4] focus:ring-2 focus:ring-[#06B6D4]/20"
                 placeholder="مثال: النسخة النهائية من التصميم"
                 required
                 maxLength={200}
@@ -184,7 +184,7 @@ export function ProjectDeliverySection({
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#06B6D4] focus:ring-1 focus:ring-[#06B6D4]"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-[#06B6D4] focus:ring-2 focus:ring-[#06B6D4]/20"
                 placeholder="اشرح ما تم تسليمه بالتفصيل"
                 required
                 maxLength={5000}
@@ -196,7 +196,7 @@ export function ProjectDeliverySection({
               <input
                 value={deliverableLinks}
                 onChange={(e) => setDeliverableLinks(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#06B6D4] focus:ring-1 focus:ring-[#06B6D4]"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-[#06B6D4] focus:ring-2 focus:ring-[#06B6D4]/20"
                 placeholder="رابط معاينة، رابط مستند، إلخ"
                 maxLength={1000}
               />
@@ -205,25 +205,25 @@ export function ProjectDeliverySection({
               <button
                 type="submit"
                 disabled={loading}
-                className="flex items-center gap-2 rounded-xl bg-[#06B6D4] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#0598B4] disabled:opacity-50"
-              >
-                {loading ? 'جاري الإرسال...' : 'إرسال التسليم'}
-              </button>
+                  className="flex items-center gap-2 rounded-2xl bg-[#0B132B] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#16213C] disabled:opacity-50"
+                >
+                  {loading ? 'جاري الإرسال...' : 'إرسال التسليم'}
+                </button>
               <button
                 type="button"
                 onClick={() => setShowSubmitForm(false)}
-                className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50"
-              >
-                إلغاء
-              </button>
+                  className="rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50"
+                >
+                  إلغاء
+                </button>
             </div>
           </div>
         </form>
       )}
 
       {isMerchantOwner && isDelivered && latestDelivery && latestDelivery.status === 'SUBMITTED' ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center gap-2 text-sm font-bold text-[#111827]">
+        <div className="rounded-[24px] border border-slate-200 bg-[#F8FAFC] p-6">
+          <div className="mb-4 flex items-center gap-2 text-sm font-bold text-[#0B132B]">
             <FileText size={18} className="text-[#06B6D4]" />
             مراجعة التسليم
           </div>
@@ -235,7 +235,7 @@ export function ProjectDeliverySection({
                 <textarea
                   value={revisionNote}
                   onChange={(e) => setRevisionNote(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#06B6D4] focus:ring-1 focus:ring-[#06B6D4]"
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-[#06B6D4] focus:ring-2 focus:ring-[#06B6D4]/20"
                   placeholder="اذكر التعديلات المطلوبة بالتفصيل"
                   rows={3}
                   maxLength={2000}
@@ -244,13 +244,13 @@ export function ProjectDeliverySection({
                   <button
                     onClick={handleRequestRevision}
                     disabled={loading || !revisionNote.trim()}
-                    className="flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-2xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
                   >
-                    {loading ? 'جاري الإرسال...' : 'إرسال طلب التعديل'}
+                    {loading ? 'جاري الإرسال...' : 'إرسال طلب المراجعة'}
                   </button>
                   <button
                     onClick={() => setShowRevisionForm(false)}
-                    className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-bold text-slate-600"
+                    className="rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600"
                   >
                     إلغاء
                   </button>
@@ -261,19 +261,19 @@ export function ProjectDeliverySection({
                 <button
                   onClick={handleApprove}
                   disabled={loading}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  <CheckCircle size={16} />
-                  {loading ? 'جاري...' : 'قبول التسليم'}
-                </button>
-                <button
-                  onClick={() => setShowRevisionForm(true)}
-                  disabled={loading}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-5 py-2.5 text-sm font-bold text-amber-700 transition-colors hover:bg-amber-100 disabled:opacity-50"
-                >
-                  <RefreshCw size={16} />
-                  طلب تعديل
-                </button>
+                   className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                 >
+                   <CheckCircle size={16} />
+                   {loading ? 'جاري...' : 'اعتماد التسليم'}
+                 </button>
+                 <button
+                   onClick={() => setShowRevisionForm(true)}
+                   disabled={loading}
+                   className="flex items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-2.5 text-sm font-bold text-amber-700 transition-colors hover:bg-amber-100 disabled:opacity-50"
+                 >
+                   <RefreshCw size={16} />
+                   طلب مراجعة
+                 </button>
               </div>
             )}
           </div>
@@ -281,23 +281,23 @@ export function ProjectDeliverySection({
       ) : null}
 
       {isDelivered && isProviderOwner && latestDelivery?.status === 'SUBMITTED' ? (
-        <div className="rounded-2xl border border-teal-200 bg-teal-50 px-5 py-4 text-sm font-bold text-teal-800">
-          تم تسليم العمل، بانتظار مراجعة التاجر.
-        </div>
+         <div className="rounded-[24px] border border-teal-200 bg-teal-50 px-5 py-4 text-sm font-bold text-teal-800">
+           تم تسليم العمل، بانتظار مراجعة التاجر.
+         </div>
       ) : null}
 
       {isRevisionRequested && isProviderOwner ? (
         <div className="space-y-4">
           {latestDelivery ? (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-              <div className="mb-2 text-sm font-bold text-amber-800">طلب تعديل من التاجر</div>
-              <div className="text-sm leading-7 text-amber-700">{latestDelivery.revisionNote}</div>
-            </div>
+             <div className="rounded-[24px] border border-amber-200 bg-amber-50 p-5">
+               <div className="mb-2 text-sm font-bold text-amber-800">طلب تعديل من التاجر</div>
+               <div className="text-sm leading-7 text-amber-700">{latestDelivery.revisionNote}</div>
+             </div>
           ) : null}
           {!showSubmitForm ? (
             <button
               onClick={() => setShowSubmitForm(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#06B6D4] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#0598B4]"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0B132B] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#16213C]"
             >
               <Send size={16} />
               إعادة التسليم بعد التعديل
@@ -316,9 +316,9 @@ export function ProjectDeliverySection({
       )}
 
       {deliveries.length === 0 && !canSubmit && projectStatus !== 'KICKOFF_PENDING' && projectStatus !== 'PENDING' && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
-          لا توجد تسليمات بعد.
-        </div>
+         <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
+           لا توجد تسليمات بعد.
+         </div>
       )}
     </div>
   );
@@ -326,20 +326,20 @@ export function ProjectDeliverySection({
 
 function DeliveryCard({ delivery }: { delivery: Delivery }) {
   return (
-    <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+    <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-sm font-bold text-slate-800">{delivery.title}</span>
+        <span className="text-sm font-bold text-[#0B132B]">{delivery.title}</span>
         <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${statusStyles[delivery.status] || 'bg-slate-100 text-slate-600'}`}>
           {statusLabels[delivery.status] || delivery.status}
         </span>
       </div>
-      <p className="mb-2 text-sm leading-6 text-slate-600">{delivery.description}</p>
+      <p className="mb-3 text-sm leading-7 text-slate-600">{delivery.description}</p>
       {delivery.deliverableLinks ? (
         <a
           href={delivery.deliverableLinks}
           target="_blank"
           rel="noopener noreferrer"
-          className="mb-2 flex items-center gap-1 text-xs font-bold text-[#06B6D4] hover:underline"
+          className="mb-2 inline-flex items-center gap-1 text-xs font-bold text-[#06B6D4] hover:underline"
         >
           <ExternalLink size={14} />
           روابط التسليم

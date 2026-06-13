@@ -41,7 +41,7 @@ export default function CreateProjectFromOfferButton({ orderNumber }: CreateProj
         type="button"
         onClick={handleCreateProject}
         disabled={loading}
-        className="inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs font-bold text-violet-800 transition-colors hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0B132B] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#16213C] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? <Loader2 size={14} className="animate-spin" /> : <FolderOpen size={14} />}
         {loading ? 'جاري إنشاء المشروع...' : 'إنشاء مشروع من العرض المختار'}

@@ -116,10 +116,10 @@ export default function RequestReviewActions({
   };
 
   return (
-    <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="space-y-4 rounded-[28px] border border-slate-200 bg-white p-6">
       <div>
-        <h3 className="text-sm font-bold text-[#111827]">إجراءات المراجعة</h3>
-        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+        <h3 className="text-base font-bold text-[#0B132B]">إجراءات المراجعة</h3>
+        <p className="mt-1 text-sm leading-7 text-slate-500">
           الحالة الحالية: <span className="font-bold text-slate-700">{currentStatus}</span>
         </p>
       </div>
@@ -130,7 +130,7 @@ export default function RequestReviewActions({
           value={adminNote}
           onChange={(event) => setAdminNote(event.target.value)}
           rows={4}
-          className="input-base min-h-[100px] resize-y"
+          className="input-base min-h-[110px] resize-y"
           placeholder="تظهر للتاجر عند طلب تعديل أو رفض الطلب..."
         />
       </div>
@@ -141,19 +141,19 @@ export default function RequestReviewActions({
           value={internalNote}
           onChange={(event) => setInternalNote(event.target.value)}
           rows={4}
-          className="input-base min-h-[100px] resize-y"
+          className="input-base min-h-[110px] resize-y"
           placeholder="ملاحظات داخلية لا تظهر للتاجر..."
         />
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-700">
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-700">
           {error}
         </div>
       )}
 
       {visibleActions.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500 text-center">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-semibold text-slate-500 text-center">
           {currentStatusKey === 'APPROVED_FOR_OFFERS'
             ? 'تم اعتماد هذا الطلب للعروض ولا توجد إجراءات مراجعة متاحة حالياً.'
             : currentStatusKey === 'REJECTED'
@@ -171,7 +171,7 @@ export default function RequestReviewActions({
                 type="button"
                 onClick={() => handleAction(item.action)}
                 disabled={Boolean(loadingAction)}
-                className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${item.className}`}
+                className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${item.className}`}
               >
                 {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Icon size={16} />}
                 {item.label}

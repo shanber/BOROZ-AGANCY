@@ -111,34 +111,38 @@ export function ProjectMessagesSection({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="mb-4 flex items-center gap-2 text-sm font-bold text-[#111827]">
-        <MessageSquare size={18} className="text-[#06B6D4]" />
-        محادثة المشروع
+    <div className="rounded-[28px] border border-[#E5E7EB] bg-white p-6 md:p-7">
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-bold text-[#0B132B]">
+            <MessageSquare size={18} className="text-[#06B6D4]" />
+            Messages
+          </div>
+          <p className="mt-2 text-sm leading-7 text-slate-500">
+            استخدم هذه المساحة لتوثيق القرارات والتوضيحات والتحديثات التنفيذية داخل بروز فقط.
+          </p>
+        </div>
       </div>
-      <p className="mb-4 text-xs text-slate-500">
-        استخدم هذه المساحة لتوثيق النقاشات والتحديثات داخل بروز.
-      </p>
 
       {error && (
-        <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5">
+        <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
           <p className="text-xs font-semibold text-red-700">{error}</p>
         </div>
       )}
 
       <div
         ref={listRef}
-        className="mb-4 max-h-[360px] min-h-[120px] overflow-y-auto space-y-3 rounded-xl border border-slate-100 bg-slate-50 p-4"
+        className="mb-5 max-h-[420px] min-h-[160px] overflow-y-auto space-y-4 rounded-[24px] border border-slate-200 bg-[#F8FAFC] p-4 md:p-5"
       >
         {loading ? (
-          <div className="flex items-center justify-center gap-2 py-8 text-xs text-slate-500">
+          <div className="flex items-center justify-center gap-2 py-10 text-xs text-slate-500">
             <Loader2 size={14} className="animate-spin" />
             جاري تحميل الرسائل...
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
+          <div className="flex flex-col items-center justify-center py-10 text-center">
             <MessageSquare size={24} className="text-slate-300 mb-2" />
-            <p className="text-xs text-slate-500">لا توجد رسائل في هذا المشروع حتى الآن.</p>
+            <p className="text-sm text-slate-500">لا توجد رسائل في هذا المشروع حتى الآن.</p>
           </div>
         ) : (
           messages.map((msg) => (
@@ -147,23 +151,25 @@ export function ProjectMessagesSection({
               className={`flex ${msg.isMine ? 'justify-start' : 'justify-end'}`}
             >
               <div
-                className={`max-w-[85%] rounded-xl px-4 py-2.5 ${
+                className={`max-w-[88%] rounded-[22px] px-4 py-3.5 shadow-sm ${
                   msg.isMine
-                    ? 'bg-blue-600 text-white rounded-tr-sm'
-                    : 'bg-white border border-slate-200 rounded-tl-sm text-slate-900'
+                    ? 'bg-[#0B132B] text-white rounded-tr-md'
+                    : 'border border-slate-200 bg-white text-slate-900 rounded-tl-md'
                 }`}
               >
-                {!msg.isMine && (
-                  <p className="mb-0.5 text-[10px] font-semibold text-[#06B6D4]">
-                    {msg.sender.name || msg.sender.roleLabel}
-                  </p>
-                )}
-                <p className={`text-xs leading-relaxed whitespace-pre-wrap break-words ${msg.isMine ? '' : 'text-slate-900'}`}>
+                <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold">
+                  <span className={msg.isMine ? 'text-white/70' : 'text-[#06B6D4]'}>
+                    {msg.isMine ? 'أنت' : msg.sender.name || msg.sender.roleLabel}
+                  </span>
+                  {!msg.isMine ? <span className="text-slate-300">•</span> : null}
+                  {!msg.isMine ? <span className="text-slate-400">{msg.sender.roleLabel}</span> : null}
+                </div>
+                <p className={`text-sm leading-7 whitespace-pre-wrap break-words ${msg.isMine ? 'text-white' : 'text-slate-900'}`}>
                   {msg.body}
                 </p>
                 <p
-                  className={`mt-1 text-[9px] ${
-                    msg.isMine ? 'text-blue-200' : 'text-slate-400'
+                  className={`mt-3 text-[10px] ${
+                    msg.isMine ? 'text-white/55' : 'text-slate-400'
                   }`}
                 >
                   {formatTime(msg.createdAt)}
@@ -175,23 +181,23 @@ export function ProjectMessagesSection({
       </div>
 
       {messagingBlockedReason ? (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <p className="text-xs text-slate-600">{messagingBlockedReason}</p>
+        <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+          <p className="text-sm leading-7 text-slate-600">{messagingBlockedReason}</p>
         </div>
       ) : (
-        <form onSubmit={handleSend} className="flex items-end gap-2">
+        <form onSubmit={handleSend} className="flex items-end gap-3">
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="اكتب تحديثًا أو استفسارًا متعلقًا بالمشروع..."
-            rows={2}
-            className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
+            rows={3}
+            className="flex-1 resize-none rounded-[22px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-[#06B6D4] focus:ring-2 focus:ring-[#06B6D4]/20"
             maxLength={2000}
           />
           <button
             type="submit"
             disabled={sending || !text.trim()}
-            className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:bg-slate-300 transition-colors"
+            className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl bg-[#0B132B] text-white transition-colors hover:bg-[#16213C] disabled:bg-slate-300"
             title="إرسال الرسالة"
           >
             {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}

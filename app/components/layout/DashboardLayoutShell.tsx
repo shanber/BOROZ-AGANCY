@@ -12,7 +12,7 @@ export function DashboardLayoutShell({ children }: DashboardLayoutShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC] overflow-x-hidden relative">
+    <div className="flex min-h-screen bg-[#F6F8FB] overflow-x-hidden relative">
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-slate-900/20 z-40 md:hidden transition-opacity duration-300"

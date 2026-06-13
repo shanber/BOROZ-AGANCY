@@ -1,16 +1,16 @@
 import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
-import { Eye, Plus, Search } from 'lucide-react';
+import { ClipboardList, Eye, Plus, Search } from 'lucide-react';
 import prisma from '@/app/lib/prisma';
 import { authOptions } from '@/app/lib/auth';
-import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { resolveServiceLabel } from '@/app/lib/services';
 import { formatCurrency, formatShortDate } from '@/app/lib/formatters';
 import { getOrderStatusLabel, getOrderStatusStyle } from '@/app/lib/order-status';
 import { merchantOrderOwnershipFilter } from '@/app/lib/order-access';
 import { getCached } from '@/app/lib/server-cache';
+import { OpsBadge, OpsEmptyState, OpsPageHeader, OpsSectionHeader, OpsSurface } from '@/app/components/execution/OpsUI';
 
 const pageSize = 20;
 const merchantOrderStatuses = [
@@ -103,22 +103,24 @@ export default async function OrdersPage({
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col gap-4 border-b border-slate-200/60 pb-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-[#111827] md:text-2xl">الطلبات</h2>
-          <p className="mt-1 text-xs text-[#64748B] md:text-sm">
-            متابعة طلبات الخدمات وحالة مراجعتها داخل بروز.
-          </p>
-        </div>
-        <Link href="/dashboard/orders/new">
-          <Button className="flex items-center gap-1.5 rounded-xl bg-[#06B6D4] px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-[#06B6D4]/10 hover:bg-[#0891B2]">
-            <Plus size={16} />
-            طلب جديد
-          </Button>
-        </Link>
-      </div>
+      <OpsPageHeader
+        eyebrow="Requests"
+        title="الطلبات"
+        description="نقطة الدخول لكل عمل جديد داخل بروز: المتابعة، التوضيح، فتح العروض، والتحويل إلى تنفيذ."
+        actions={
+          <Link href="/dashboard/orders/new">
+            <Button className="flex items-center gap-1.5 rounded-2xl bg-[#0B132B] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#16213C]">
+              <Plus size={16} />
+              طلب جديد
+            </Button>
+          </Link>
+        }
+      >
+        <OpsBadge tone="slate" label={`إجمالي النتائج ${orders.length}`} />
+      </OpsPageHeader>
 
-      <form className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_220px_auto]">
+      <OpsSurface className="p-6">
+        <form className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_220px_auto]">
         <div className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input
@@ -138,17 +140,19 @@ export default async function OrdersPage({
         <Button type="submit" className="bg-[#06B6D4] px-5 text-sm font-bold text-white hover:bg-[#0891B2]">
           تطبيق
         </Button>
-      </form>
+        </form>
+      </OpsSurface>
 
-      <Card className="overflow-hidden border border-slate-200/80 shadow-sm">
+      <OpsSurface className="overflow-hidden">
+        <OpsSectionHeader title="قائمة الطلبات" description="الطلبات الظاهرة هنا مرتبطة بحسابك وتتحرك فقط عبر مسار بروز التشغيلي." />
         <div className="w-full overflow-x-auto">
           {orders.length === 0 ? (
-            <div className="space-y-2 py-12 text-center text-slate-500">
-              <p className="text-sm">لا توجد طلبات تطابق الفلتر أو البحث الحالي.</p>
-              <Link href="/dashboard/orders" className="text-xs font-bold text-[#06B6D4] hover:underline">
-                إعادة ضبط الفلاتر
-              </Link>
-            </div>
+            <OpsEmptyState
+              icon={ClipboardList}
+              title="لا توجد طلبات تطابق الفلتر الحالي"
+              description="جرّب تغيير حالة الطلب أو البحث باسم المتجر أو رقم الطلب لإظهار نتائج مختلفة."
+              action={<Link href="/dashboard/orders" className="text-sm font-semibold text-[#06B6D4]">إعادة ضبط الفلاتر</Link>}
+            />
           ) : (
             <table className="w-full min-w-[750px] border-collapse whitespace-nowrap text-right text-xs">
               <thead>
@@ -219,7 +223,7 @@ export default async function OrdersPage({
             </table>
           )}
         </div>
-      </Card>
+      </OpsSurface>
 
       <div className="flex items-center justify-between text-xs font-bold text-slate-500">
         <Link

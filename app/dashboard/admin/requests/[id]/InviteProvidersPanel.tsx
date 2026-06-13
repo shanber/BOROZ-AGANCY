@@ -92,12 +92,12 @@ export default function InviteProvidersPanel({ orderNumber, requestStatus, provi
   }
 
   return (
-    <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="space-y-4 rounded-[28px] border border-slate-200 bg-white p-6">
       <div className="flex items-center gap-2">
         <Users size={18} className="text-[#06B6D4]" />
         <div>
-          <h3 className="text-sm font-bold text-[#111827]">دعوة الخبراء لتقديم عروض</h3>
-          <p className="mt-1 text-xs leading-relaxed text-slate-500">
+          <h3 className="text-base font-bold text-[#0B132B]">دعوة الخبراء لتقديم عروض</h3>
+          <p className="mt-1 text-sm leading-7 text-slate-500">
             اختر الخبراء المعتمدين المناسبين لهذا الطلب لإرسال دعوة مباشرة داخل بروز.
           </p>
         </div>
@@ -118,7 +118,7 @@ export default function InviteProvidersPanel({ orderNumber, requestStatus, provi
             type="button"
             disabled={loading || selectedIds.length === 0}
             onClick={() => inviteProviders(selectedIds)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#06B6D4] px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#0891B2] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0B132B] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#16213C] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
             دعوة الخبراء المحددين
@@ -130,29 +130,29 @@ export default function InviteProvidersPanel({ orderNumber, requestStatus, provi
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-700">
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-700">
           {error}
         </div>
       ) : null}
 
       {success ? (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-700">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-700">
           {success}
         </div>
       ) : null}
 
       {providers.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-center text-xs font-semibold text-slate-500">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-center text-sm font-semibold text-slate-500">
           لا يوجد خبراء معتمدون مطابقون لهذا الطلب حالياً.
         </div>
       ) : (
         <div className="space-y-3">
           {providers.map((provider) => (
-            <div key={provider.id} className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+            <div key={provider.id} className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-sm font-bold text-[#111827]">{provider.name}</div>
+                    <div className="text-sm font-bold text-[#0B132B]">{provider.name}</div>
                     {provider.alreadyInvited ? (
                       <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
                         تم إرسال الدعوة
@@ -171,7 +171,7 @@ export default function InviteProvidersPanel({ orderNumber, requestStatus, provi
                     )}
                   </div>
                   {provider.offer ? (
-                    <div className="rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-3 text-[11px] leading-6 text-cyan-900">
+                    <div className="rounded-2xl border border-cyan-100 bg-cyan-50 px-3 py-3 text-[11px] leading-6 text-cyan-900">
                       <div className="font-bold">تم تقديم عرض</div>
                       <div>السعر: {provider.offer.price} ر.س</div>
                       <div>مدة التنفيذ: {provider.offer.deliveryDays} يوم</div>
@@ -197,7 +197,7 @@ export default function InviteProvidersPanel({ orderNumber, requestStatus, provi
                         type="button"
                         disabled={loading}
                         onClick={() => inviteProviders([provider.id])}
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-[11px] font-bold text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         دعوة الآن
                       </button>

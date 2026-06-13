@@ -16,7 +16,7 @@
   --color-blue-600: #2563EB;
 
   /* Backgrounds */
-  --bg-primary: #F8FAFC;
+  --bg-primary: #F6F8FB;
   --bg-card: #FFFFFF;
   --bg-subtle: #F1F5F9;
 
@@ -42,8 +42,7 @@
   --shadow-none: none;
 
   /* Fonts */
-  --font-ar: 'IBM Plex Sans Arabic', 'system-ui', sans-serif;
-  --font-num: 'Inter', 'system-ui', sans-serif;
+--font-ar: 'Tajawal', 'system-ui', sans-serif;  --font-num: 'Inter', 'system-ui', sans-serif;
 }
 
 /* ─────────────────────────────────────────────────────────────

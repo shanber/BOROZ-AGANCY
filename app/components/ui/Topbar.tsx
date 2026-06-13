@@ -10,8 +10,8 @@ interface TopbarProps {
 }
 
 const pageTitles: Record<string, string> = {
-  '/dashboard': 'لوحة التحكم',
-  '/dashboard/admin': 'لوحة التحكم',
+  '/dashboard': 'مركز التنفيذ',
+  '/dashboard/admin': 'مركز العمليات',
   '/dashboard/admin/requests': 'مراجعة الطلبات',
   '/dashboard/admin/providers': 'مقدمي الخدمات',
   '/dashboard/admin/payouts': 'إدارة الصرف',
@@ -19,7 +19,7 @@ const pageTitles: Record<string, string> = {
   '/dashboard/offers': 'العروض',
   '/dashboard/projects': 'المشاريع',
   '/dashboard/settings': 'الإعدادات',
-  '/dashboard/provider': 'لوحة التحكم',
+  '/dashboard/provider': 'مساحة عمل الخبير',
   '/dashboard/provider/opportunities': 'الفرص المتاحة',
   '/dashboard/provider/pending': 'بانتظار الاعتماد',
   '/dashboard/messages': 'الرسائل',

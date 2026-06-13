@@ -1,337 +1,299 @@
-'use client';
-
-import React from 'react';
 import Link from 'next/link';
+import { getServerSession } from 'next-auth';
+import { notFound, redirect } from 'next/navigation';
+import { ArrowRight, FolderKanban, GitBranch, ListChecks, MessageSquareMore } from 'lucide-react';
+import prisma from '@/app/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { merchantOrderOwnershipFilter } from '@/app/lib/order-access';
+import { getOrderStatusLabel, getOrderStatusStyle } from '@/app/lib/order-status';
+import { resolveServiceLabel } from '@/app/lib/services';
+import { buildWorkflowCounts, formatRelativeTime } from '@/app/lib/execution';
+import { formatCurrency, formatDate } from '@/app/lib/formatters';
 import {
-  AlertTriangle,
-  ArrowRight,
-  Calendar,
-  DollarSign,
-  type LucideIcon,
-  Mail,
-  Phone,
-  ShoppingCart,
-  Store,
-  User,
-} from 'lucide-react';
-import { Card, CardBody, CardHeader } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Order } from '@/app/lib/demo-data';
-import { getOrderById } from '@/app/lib/orders-api';
-import { getOrderStatusStyle } from '@/app/lib/order-status';
+  OpsBadge,
+  OpsEmptyState,
+  OpsMetaGrid,
+  OpsPageHeader,
+  OpsSectionHeader,
+  OpsSurface,
+  OpsWorkflowPipeline,
+} from '@/app/components/execution/OpsUI';
 
-export default function OrderDetailsPage({ params }: { params: { id: string } }) {
-  const orderId = params.id;
-  const [order, setOrder] = React.useState<Order | undefined>(undefined);
-  const [isLoaded, setIsLoaded] = React.useState(false);
-
-  React.useEffect(() => {
-    getOrderById(orderId)
-      .then((apiOrder) => {
-        setOrder(apiOrder || undefined);
-        setIsLoaded(true);
-      })
-      .catch(() => {
-        setIsLoaded(true);
-      });
-  }, [orderId]);
-
-  if (!isLoaded) {
-    return (
-      <div className="flex min-h-[300px] items-center justify-center animate-fade-in">
-        <div className="flex items-center gap-2 font-bold text-[#06B6D4]">
-          <span className="inline-block animate-spin">⟳</span>
-          جاري تحميل تفاصيل الطلب...
-        </div>
-      </div>
-    );
+function getOrderAction(status: string, hasProject: boolean) {
+  switch (status) {
+    case 'NEEDS_CHANGES':
+      return 'حدّث التفاصيل المطلوبة ثم أعد إرسال الطلب للمراجعة.';
+    case 'APPROVED_FOR_OFFERS':
+    case 'COLLECTING_OFFERS':
+      return 'راجع العروض الواردة عندما تصبح متاحة واختر العرض المناسب.';
+    case 'OFFER_SELECTED':
+      return hasProject ? 'انتقل إلى المشروع لمتابعة التنفيذ الفعلي.' : 'بانتظار تهيئة المشروع من بروز.';
+    case 'IN_EXECUTION':
+      return 'تابع المشروع المفتوح والرسائل والتسليمات من مساحة التنفيذ.';
+    case 'DELIVERED':
+      return 'راجع التسليم داخل المشروع واعتمد أو اطلب مراجعة.';
+    case 'COMPLETED':
+      return 'اكتمل الطلب بنجاح ولا توجد خطوة مطلوبة حالياً.';
+    case 'REJECTED':
+      return 'الطلب مرفوض. راجع الملاحظات إن وجدت قبل إعادة التقديم.';
+    case 'CANCELLED':
+      return 'تم إغلاق الطلب ولن ينتقل إلى مراحل لاحقة.';
+    case 'UNDER_REVIEW':
+      return 'الطلب قيد المراجعة من إدارة بروز الآن.';
+    case 'SUBMITTED':
+    default:
+      return 'تم استلام الطلب وهو بانتظار بدء المراجعة.';
   }
+}
+
+export default async function OrderDetailsPage({ params }: { params: { id: string } }) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    redirect('/login');
+  }
+
+  if (session.user.globalRole !== 'MERCHANT') {
+    redirect('/dashboard');
+  }
+
+  const ownerFilter = merchantOrderOwnershipFilter(session);
+
+  const order = await prisma.order.findFirst({
+    where: {
+      AND: [ownerFilter, { OR: [{ id: params.id }, { orderNumber: params.id }] }],
+    },
+    select: {
+      id: true,
+      orderNumber: true,
+      storeName: true,
+      managerName: true,
+      phone: true,
+      email: true,
+      sallaUrl: true,
+      serviceType: true,
+      budget: true,
+      priority: true,
+      description: true,
+      notes: true,
+      status: true,
+      adminNote: true,
+      createdAt: true,
+      updatedAt: true,
+      selectedOfferId: true,
+      offers: {
+        where: { status: { in: ['SUBMITTED', 'ACCEPTED', 'REJECTED'] } },
+        select: {
+          id: true,
+          status: true,
+          price: true,
+          deliveryDays: true,
+          submittedAt: true,
+        },
+        orderBy: { submittedAt: 'desc' },
+      },
+      project: {
+        select: {
+          id: true,
+          name: true,
+          status: true,
+        },
+      },
+    },
+  });
 
   if (!order) {
-    return (
-      <div className="mx-auto max-w-md space-y-6 py-12 animate-fade-in">
-        <Card className="border-red-200 bg-red-50/20 text-center">
-          <CardBody className="space-y-4 p-8">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
-              <AlertTriangle size={28} />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-bold text-red-950">الطلب غير موجود</h3>
-              <p className="text-sm text-red-700">
-                لم نتمكن من العثور على الطلب رقم <span className="font-bold">{orderId}</span>.
-              </p>
-            </div>
-            <Link href="/dashboard/orders">
-              <Button className="w-full rounded-xl bg-[#06B6D4] py-2.5 text-xs font-bold text-white hover:bg-[#0891B2]">
-                العودة لقائمة الطلبات
-              </Button>
-            </Link>
-          </CardBody>
-        </Card>
-      </div>
-    );
+    notFound();
   }
 
-  const statusKey = order.statusKey || order.status;
-  const needsChanges = statusKey === 'NEEDS_CHANGES';
-  const hasOffersFlow = statusKey === 'COLLECTING_OFFERS' || statusKey === 'APPROVED_FOR_OFFERS';
-  const offerSelected = statusKey === 'OFFER_SELECTED';
-  const hasProject = Boolean(order.projectId);
+  const pipelineSteps = buildWorkflowCounts([order.status]);
 
-  const statusGuidance: Record<string, { title: string; message: string; style: string }> = {
-    SUBMITTED: {
-      title: 'بانتظار مراجعة بروز',
-      message: 'طلبك قيد المراجعة من قبل فريق بروز. سيتم إعلامك فور الانتهاء من المراجعة.',
-      style: 'border-blue-200 bg-blue-50',
-    },
-    UNDER_REVIEW: {
-      title: 'قيد المراجعة',
-      message: 'فريق بروز يدرس طلبك حاليًا ويقوم بتقييم المتطلبات.',
-      style: 'border-sky-200 bg-sky-50',
-    },
-    REJECTED: {
-      title: 'لم يتم اعتماد الطلب',
-      message: 'نأسف، لم يتم اعتماد طلبك من قبل بروز. يمكنك الاطلاع على ملاحظات فريق بروز في الطلب والتواصل معنا.',
-      style: 'border-red-200 bg-red-50',
-    },
-    CANCELLED: {
-      title: 'تم إلغاء الطلب',
-      message: 'تم إلغاء هذا الطلب ولن يتم اتخاذ أي إجراء إضافي بخصوصه.',
-      style: 'border-slate-200 bg-slate-50',
-    },
-    DELIVERED: {
-      title: 'تم التسليم',
-      message: 'تم تسليم مشروعك من قبل مقدم الخدمة. يرجى مراجعة التسليم واختيار الاعتماد أو طلب تعديل من صفحة المشروع.',
-      style: 'border-teal-200 bg-teal-50',
-    },
-    COMPLETED: {
-      title: 'مكتمل',
-      message: 'تم إكمال المشروع بنجاح. نشكر لك ثقتك ببروز، ونتطلع لخدمتك في مشاريع قادمة.',
-      style: 'border-green-200 bg-green-50',
-    },
-    IN_EXECUTION: {
-      title: 'مشروعك قيد التنفيذ',
-      message: 'يعمل مقدم الخدمة على مشروعك حاليًا. يمكنك متابعة التقدم ومراسلة مقدم الخدمة من صفحة المشروع.',
-      style: 'border-indigo-200 bg-indigo-50',
-    },
-  };
-
-  const guidance = statusGuidance[statusKey];
+  const primaryAction = order.status === 'NEEDS_CHANGES'
+    ? {
+        href: `/dashboard/orders/${encodeURIComponent(order.orderNumber)}/edit`,
+        label: 'تحديث الطلب',
+      }
+    : order.status === 'APPROVED_FOR_OFFERS' || order.status === 'COLLECTING_OFFERS'
+    ? {
+        href: `/dashboard/offers/${encodeURIComponent(order.orderNumber)}`,
+        label: 'مراجعة العروض',
+      }
+    : order.project?.id
+    ? {
+        href: `/dashboard/projects/${order.project.id}`,
+        label: 'فتح المشروع',
+      }
+    : null;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 animate-fade-in">
-      <div className="flex flex-col gap-4 border-b border-slate-200/60 pb-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard/orders"
-            className="rounded-xl border border-slate-200/80 bg-white p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
-            title="العودة للطلبات"
-          >
-            <ArrowRight size={18} />
-          </Link>
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-xl font-bold text-[#111827] md:text-2xl">{order.id}</h2>
-              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${getOrderStatusStyle(statusKey)}`}>
-                {order.status}
-              </span>
-            </div>
-            <p className="mt-1 text-xs text-[#64748B] md:text-sm">
-              تفاصيل طلب الخدمة الخاص بمتجر <span className="font-bold text-slate-700">{order.storeName}</span>
-            </p>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <div className="flex justify-start">
+        <Link href="/dashboard/orders" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#0B132B] transition-colors hover:bg-slate-50">
+          <ArrowRight size={16} />
+          العودة إلى الطلبات
+        </Link>
       </div>
 
-      {guidance && !needsChanges && !hasOffersFlow && !offerSelected && !hasProject ? (
-        <Card className={guidance.style}>
-          <CardBody className="space-y-2 p-5">
-            <div className="text-sm font-bold">{guidance.title}</div>
-            <p className="text-xs leading-relaxed opacity-80">{guidance.message}</p>
-          </CardBody>
-        </Card>
-      ) : null}
+      <OpsPageHeader
+        eyebrow={order.orderNumber}
+        title="تفاصيل الطلب"
+        description="هذه الصفحة تشرح أين يقف طلبك الآن داخل مسار بروز، وما هي الخطوة التالية قبل أن يتحول إلى تنفيذ فعلي."
+        actions={<span className={`rounded-full px-3 py-1 text-xs font-bold ${getOrderStatusStyle(order.status)}`}>{getOrderStatusLabel(order.status)}</span>}
+      >
+        <OpsBadge tone="slate" label={resolveServiceLabel(order.serviceType)} />
+        <OpsBadge tone="cyan" label={order.storeName} />
+      </OpsPageHeader>
 
-      {needsChanges && (
-        <Card className="border-amber-200 bg-amber-50/50">
-          <CardBody className="space-y-3 p-5">
-            <div className="flex items-center gap-2 text-sm font-bold text-amber-800">
-              <AlertTriangle size={18} />
-              يحتاج الطلب إلى تعديل
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.1fr)_340px]">
+        <div className="space-y-6">
+          <OpsSurface>
+            <OpsSectionHeader title="الموقع الحالي في المسار" description="كل طلب في بروز يمر بخطوات واضحة: طلب، مراجعة، عروض، اختيار، تنفيذ، تسليم، إكمال." />
+            <OpsWorkflowPipeline steps={pipelineSteps} />
+          </OpsSurface>
+
+          <OpsSurface>
+            <OpsSectionHeader title="ملخص الطلب" description="المعطيات الأساسية التي يعتمد عليها فريق بروز والخبراء عند تقييم الطلب وتنفيذه." />
+            <div className="p-6">
+              <OpsMetaGrid
+                items={[
+                  { label: 'الخدمة', value: resolveServiceLabel(order.serviceType) },
+                  { label: 'الأولوية', value: order.priority || 'عادي' },
+                  { label: 'الميزانية', value: order.budget ? formatCurrency(order.budget) : 'قيد التقدير' },
+                  { label: 'عدد العروض', value: String(order.offers.length) },
+                  { label: 'تاريخ الإنشاء', value: formatDate(order.createdAt) },
+                  { label: 'آخر تحديث', value: formatRelativeTime(order.updatedAt) },
+                ]}
+              />
             </div>
-            {order.adminNote && (
-              <div>
-                <span className="mb-1 block text-[10px] font-bold text-amber-700">ملاحظات بروز</span>
-                <p className="rounded-xl border border-amber-200 bg-white/70 p-4 text-xs leading-relaxed text-amber-900">
-                  {order.adminNote}
-                </p>
+          </OpsSurface>
+
+          <OpsSurface>
+            <OpsSectionHeader title="النطاق والملاحظات" description="الوصف التشغيلي الذي يبدأ منه تقييم الطلب، إلى جانب أي ملاحظات إضافية مسجلة عليه." />
+            <div className="space-y-5 p-6">
+              <ContentBlock label="وصف الاحتياج" value={order.description} />
+              {order.notes ? <ContentBlock label="ملاحظات إضافية" value={order.notes} /> : null}
+              {order.adminNote ? <ContentBlock label="ملاحظة إدارة بروز" value={order.adminNote} tone="amber" /> : null}
+            </div>
+          </OpsSurface>
+
+          <OpsSurface>
+            <OpsSectionHeader title="التحويلات المتاحة" description="اختصارات مباشرة للخطوة التالية المتاحة حالياً لهذا الطلب." />
+            <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2">
+              <ActionTile
+                icon={ListChecks}
+                title="العروض"
+                description={order.offers.length > 0 ? 'راجع مقارنة العروض واتخذ قرار الاختيار عندما تكون جاهزاً.' : 'ستظهر هنا العروض حين يبدأ الخبراء بإرسالها.'}
+                href={`/dashboard/offers/${encodeURIComponent(order.orderNumber)}`}
+                label={order.offers.length > 0 ? 'فتح العروض' : 'متابعة لاحقاً'}
+                disabled={order.offers.length === 0}
+              />
+              <ActionTile
+                icon={FolderKanban}
+                title="المشروع"
+                description={order.project?.id ? 'تم إنشاء مشروع مرتبط بهذا الطلب ويمكنك متابعة التنفيذ من داخله.' : 'سيظهر المشروع هنا بعد اختيار عرض وتجهيز التنفيذ.'}
+                href={order.project?.id ? `/dashboard/projects/${order.project.id}` : '#'}
+                label={order.project?.id ? 'فتح المشروع' : 'بانتظار الإنشاء'}
+                disabled={!order.project?.id}
+              />
+            </div>
+          </OpsSurface>
+        </div>
+
+        <aside className="space-y-6">
+          <OpsSurface>
+            <OpsSectionHeader title="الخطوة التالية" description="ما الذي يجب أن يحدث الآن حتى يستمر الطلب في التقدم." />
+            <div className="space-y-4 p-6">
+              <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-600">
+                {getOrderAction(order.status, Boolean(order.project?.id))}
               </div>
-            )}
-            <Link href={`/dashboard/orders/${order.id}/edit`}>
-              <Button className="rounded-xl bg-amber-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-amber-700">
-                تعديل الطلب وإعادة إرساله
-              </Button>
-            </Link>
-          </CardBody>
-        </Card>
-      )}
-
-      {hasOffersFlow && (
-        <Card className="border-cyan-200 bg-cyan-50/40">
-          <CardBody className="space-y-3 p-5">
-            <div className="flex items-center gap-2 text-sm font-bold text-cyan-800">
-              <ShoppingCart size={18} />
-              الطلب في مرحلة العروض
-            </div>
-            <p className="text-xs leading-relaxed text-cyan-900">
-              بدأت بروز في تجهيز أو استقبال عروض الخبراء لهذا الطلب. يمكنك مراجعة العروض المتاحة من صفحة العروض داخل المنصة.
-            </p>
-            <Link href={`/dashboard/offers/${order.id}`}>
-              <Button className="rounded-xl bg-[#06B6D4] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#0891B2]">
-                عرض العروض
-              </Button>
-            </Link>
-          </CardBody>
-        </Card>
-      )}
-
-      {offerSelected && (
-        <Card className="border-violet-200 bg-violet-50/40">
-          <CardBody className="space-y-3 p-5">
-            <div className="flex items-center gap-2 text-sm font-bold text-violet-800">
-              <ShoppingCart size={18} />
-              تم اختيار العرض
-            </div>
-            <p className="text-xs leading-relaxed text-violet-900">
-              تم اختيار العرض، وسيتم تجهيز مرحلة التنفيذ بواسطة بروز.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link href={`/dashboard/offers/${order.id}`}>
-                <Button className="rounded-xl bg-[#06B6D4] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#0891B2]">
-                  مراجعة العرض المختار
-                </Button>
-              </Link>
-              {hasProject ? (
-                <Link href={`/dashboard/projects/${order.projectId}`}>
-                  <Button className="rounded-xl border border-violet-200 bg-white px-5 py-2.5 text-xs font-bold text-violet-800 hover:bg-violet-100">
-                    عرض المشروع
-                  </Button>
+              {primaryAction ? (
+                <Link href={primaryAction.href} className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0B132B] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#16213C]">
+                  {primaryAction.label}
                 </Link>
               ) : null}
             </div>
-          </CardBody>
-        </Card>
-      )}
+          </OpsSurface>
 
-      {hasProject && !offerSelected ? (
-        <Card className="border-indigo-200 bg-indigo-50/40">
-          <CardBody className="space-y-3 p-5">
-            <div className="flex items-center gap-2 text-sm font-bold text-indigo-800">
-              <ShoppingCart size={18} />
-              المشروع جاهز للمتابعة
+          <OpsSurface>
+            <OpsSectionHeader title="بيانات التواصل المرجعية" description="البيانات التي تم إرسالها مع الطلب للاستخدام التشغيلي داخل بروز." />
+            <div className="p-6">
+              <OpsMetaGrid
+                columns={2}
+                items={[
+                  { label: 'اسم المسؤول', value: order.managerName },
+                  { label: 'الجوال', value: order.phone },
+                  { label: 'البريد', value: order.email || 'غير مضاف' },
+                  { label: 'رابط المتجر', value: order.sallaUrl || 'غير مضاف' },
+                ]}
+              />
             </div>
-            <p className="text-xs leading-relaxed text-indigo-900">
-              تم ربط هذا الطلب بمشروع داخل بروز ويمكنك متابعة مرحلة التنفيذ من صفحة المشروع.
-            </p>
-            <Link href={`/dashboard/projects/${order.projectId}`}>
-              <Button className="rounded-xl bg-[#06B6D4] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#0891B2]">
-                عرض المشروع
-              </Button>
-            </Link>
-          </CardBody>
-        </Card>
-      ) : null}
+          </OpsSurface>
 
-      <Card className="border border-slate-200/80 shadow-sm">
-        <CardHeader className="flex items-center gap-2 border-b border-slate-200/60 bg-slate-50/50 px-6 py-4">
-          <ShoppingCart size={18} className="text-[#06B6D4]" />
-          <h3 className="text-sm font-bold text-[#111827]">بيانات الخدمة المطلوبة</h3>
-        </CardHeader>
-        <CardBody className="space-y-5 p-6">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <InfoItem label="الخدمة المطلوبة" value={order.serviceLabel} />
-            <InfoItem label="الميزانية التقريبية" value={order.price} icon={DollarSign} />
-            <InfoItem label="الأولوية" value={order.priority} />
-            <InfoItem label="حالة المراجعة" value={order.status} />
-            <InfoItem label="تاريخ الطلب" value={order.date} icon={Calendar} />
-          </div>
-
-          <div>
-            <span className="mb-1 block text-[10px] font-bold text-slate-500">وصف الطلب</span>
-            <p className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-xs leading-relaxed text-slate-700">
-              {order.description}
-            </p>
-          </div>
-
-          {order.notes && (
-            <div>
-              <span className="mb-1 block text-[10px] font-bold text-slate-500">ملاحظات إضافية</span>
-              <p className="rounded-xl border border-dashed border-slate-100 bg-slate-50/40 p-3 text-xs leading-relaxed text-slate-600">
-                {order.notes}
-              </p>
-            </div>
-          )}
-        </CardBody>
-      </Card>
-
-      <Card className="border border-slate-200/80 shadow-sm">
-        <CardHeader className="flex items-center gap-2 border-b border-slate-200/60 bg-slate-50/50 px-6 py-4">
-          <Store size={18} className="text-[#06B6D4]" />
-          <h3 className="text-sm font-bold text-[#111827]">بيانات إرسال الطلب</h3>
-        </CardHeader>
-        <CardBody className="grid grid-cols-1 gap-5 p-6 sm:grid-cols-2">
-          <IconInfo icon={User} label="التاجر" value={order.managerName} />
-          <IconInfo icon={Store} label="المتجر" value={order.storeName} />
-          <IconInfo icon={Mail} label="البريد" value={order.email || 'غير متوفر'} />
-          <IconInfo icon={Phone} label="الجوال" value={order.phone || 'غير متوفر'} ltr />
-        </CardBody>
-      </Card>
+          {order.offers.length === 0 && !order.project?.id ? (
+            <OpsSurface>
+              <OpsEmptyState
+                icon={MessageSquareMore}
+                title="لا توجد حركة تنفيذية بعد"
+                description="بمجرد انتقال الطلب إلى العروض أو المشروع، ستظهر هنا التحركات التشغيلية التالية بشكل مباشر."
+              />
+            </OpsSurface>
+          ) : null}
+        </aside>
+      </div>
     </div>
   );
 }
 
-function InfoItem({
+function ContentBlock({
   label,
   value,
-  icon: Icon,
+  tone = 'slate',
 }: {
   label: string;
   value: string;
-  icon?: LucideIcon;
+  tone?: 'slate' | 'amber';
 }) {
+  const style = tone === 'amber'
+    ? 'border-amber-200 bg-amber-50 text-amber-800'
+    : 'border-slate-200 bg-slate-50 text-slate-600';
+
   return (
     <div>
-      <span className="mb-1 block text-[10px] font-bold text-slate-500">{label}</span>
-      <span className="flex items-center gap-1 text-sm font-bold text-[#111827]">
-        {Icon && <Icon size={16} className="text-emerald-600" />}
-        {value}
-      </span>
+      <div className="mb-2 text-[11px] font-semibold text-slate-500">{label}</div>
+      <div className={`rounded-[24px] border px-5 py-5 text-sm leading-8 ${style}`}>{value}</div>
     </div>
   );
 }
 
-function IconInfo({
+function ActionTile({
   icon: Icon,
+  title,
+  description,
+  href,
   label,
-  value,
-  ltr = false,
+  disabled,
 }: {
-  icon: LucideIcon;
+  icon: typeof GitBranch;
+  title: string;
+  description: string;
+  href: string;
   label: string;
-  value: string;
-  ltr?: boolean;
+  disabled?: boolean;
 }) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="rounded-lg bg-slate-100 p-2 text-slate-600">
-        <Icon size={16} />
+  const content = (
+    <div className={`rounded-[24px] border p-5 transition-colors ${disabled ? 'border-slate-200 bg-slate-50 text-slate-400' : 'border-slate-200 bg-white text-[#0B132B] hover:bg-slate-50'}`}>
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-[#0B132B]">
+        <Icon size={18} />
       </div>
-      <div className="min-w-0">
-        <span className="block text-[9px] font-bold text-slate-500">{label}</span>
-        <span className="block truncate text-xs font-semibold text-slate-800" style={ltr ? { direction: 'ltr' } : undefined}>
-          {value}
-        </span>
-      </div>
+      <div className="mt-4 text-base font-bold">{title}</div>
+      <div className="mt-2 text-sm leading-7 text-slate-500">{description}</div>
+      <div className="mt-4 text-sm font-semibold">{label}</div>
     </div>
   );
+
+  if (disabled) {
+    return content;
+  }
+
+  return <Link href={href}>{content}</Link>;
 }

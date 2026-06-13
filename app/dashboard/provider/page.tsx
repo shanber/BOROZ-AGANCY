@@ -1,83 +1,176 @@
 import Link from 'next/link';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/lib/auth';
 import { redirect } from 'next/navigation';
 import {
-  Briefcase,
-  MailOpen,
-  FolderOpen,
-  WalletMinimal,
-  RefreshCw,
+  BriefcaseBusiness,
   CheckCircle2,
-  ChevronLeft,
+  FolderKanban,
+  ListTodo,
+  MailOpen,
+  WalletMinimal,
 } from 'lucide-react';
 import prisma from '@/app/lib/prisma';
-import { formatCurrency, formatShortDate } from '@/app/lib/formatters';
-import { Notification } from '@prisma/client';
+import { authOptions } from '@/app/lib/auth';
+import { formatCurrency } from '@/app/lib/formatters';
+import {
+  formatRelativeTime,
+  getProjectHealth,
+  getProjectProgress,
+} from '@/app/lib/execution';
+import { getProjectStatusLabel } from '@/app/lib/project-utils';
+import { resolveServiceLabel } from '@/app/lib/services';
+import {
+  OpsBadge,
+  OpsEmptyState,
+  OpsHealthBadge,
+  OpsPageHeader,
+  OpsProgressBar,
+  OpsSectionHeader,
+  OpsSurface,
+  OpsTimeline,
+} from '@/app/components/execution/OpsUI';
 
-async function getProviderData(userId: string) {
+function getTaskStatusLabel(status: string) {
+  switch (status) {
+    case 'NOT_STARTED':
+      return 'لم يبدأ';
+    case 'IN_PROGRESS':
+      return 'قيد التنفيذ';
+    case 'AWAITING_CLIENT':
+      return 'بانتظار العميل';
+    case 'COMPLETED':
+      return 'مكتمل';
+    default:
+      return status;
+  }
+}
+
+async function getExpertWorkspaceData(userId: string) {
   const profile = await prisma.expertProfile.findUnique({
     where: { userId },
     include: {
       services: {
         where: { isActive: true },
         include: { service: { select: { nameAr: true, name: true } } },
-        take: 10,
+        take: 6,
       },
     },
   });
+
   if (!profile) return null;
 
   const [
-    invitationCount,
-    sentOfferCount,
-    activeProjectCount,
-    pendingPayoutCount,
-    pendingPayoutSum,
-    recentInvitations,
+    invitations,
+    submittedOffers,
     activeProjects,
-    revisionDeliveries,
-    recentNotifications,
+    pendingPayouts,
+    notifications,
+    currentTasks,
+    revisionRequests,
   ] = await Promise.all([
-    prisma.offerInvitation.count({
-      where: { expertProfileId: profile.id, status: { in: ['INVITED', 'VIEWED'] } },
-    }),
-    prisma.offer.count({
-      where: { expertProfileId: profile.id, status: 'SUBMITTED' },
-    }),
-    prisma.project.count({
-      where: {
-        expertProfileId: profile.id,
-        deletedAt: null,
-        status: { in: ['KICKOFF_PENDING', 'ACTIVE', 'PAUSED', 'IN_PROGRESS', 'ON_HOLD'] },
-      },
-    }),
-    prisma.providerPayout.count({
-      where: { providerId: userId, status: 'PENDING_REVIEW' },
-    }),
-    prisma.providerPayout.aggregate({
-      where: { providerId: userId, status: 'PENDING_REVIEW' },
-      _sum: { amount: true },
-    }),
     prisma.offerInvitation.findMany({
       where: { expertProfileId: profile.id, status: { in: ['INVITED', 'VIEWED'] } },
-      include: {
-        order: { select: { id: true, storeName: true, serviceType: true, createdAt: true } },
-      },
       orderBy: { invitedAt: 'desc' },
       take: 5,
+      select: {
+        id: true,
+        invitedAt: true,
+        order: {
+          select: {
+            id: true,
+            storeName: true,
+            serviceType: true,
+            orderNumber: true,
+          },
+        },
+      },
+    }),
+    prisma.offer.findMany({
+      where: { expertProfileId: profile.id, status: 'SUBMITTED' },
+      orderBy: { updatedAt: 'desc' },
+      take: 5,
+      select: {
+        id: true,
+        price: true,
+        deliveryDays: true,
+        submittedAt: true,
+        updatedAt: true,
+        order: {
+          select: {
+            id: true,
+            orderNumber: true,
+            storeName: true,
+            serviceType: true,
+          },
+        },
+      },
     }),
     prisma.project.findMany({
       where: {
-        expertProfileId: profile.id,
         deletedAt: null,
-        status: { in: ['KICKOFF_PENDING', 'ACTIVE', 'PAUSED', 'IN_PROGRESS', 'ON_HOLD'] },
-      },
-      include: {
-        order: { select: { storeName: true, serviceType: true } },
+        expertProfileId: profile.id,
+        status: { in: ['KICKOFF_PENDING', 'PENDING', 'ACTIVE', 'IN_PROGRESS', 'PAUSED', 'ON_HOLD', 'REVISION_REQUESTED', 'DELIVERED'] },
       },
       orderBy: { updatedAt: 'desc' },
       take: 5,
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        dueDate: true,
+        updatedAt: true,
+        order: {
+          select: {
+            storeName: true,
+            serviceType: true,
+          },
+        },
+      },
+    }),
+    prisma.providerPayout.findMany({
+      where: { providerId: userId, status: 'PENDING_REVIEW' },
+      orderBy: { createdAt: 'asc' },
+      take: 5,
+      select: {
+        id: true,
+        amount: true,
+        createdAt: true,
+        project: {
+          select: {
+            name: true,
+            order: { select: { storeName: true } },
+          },
+        },
+      },
+    }),
+    prisma.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+      select: {
+        id: true,
+        title: true,
+        message: true,
+        url: true,
+        createdAt: true,
+        type: true,
+      },
+    }),
+    prisma.task.findMany({
+      where: {
+        assignedToId: userId,
+        deletedAt: null,
+        status: { not: 'COMPLETED' },
+      },
+      orderBy: [{ dueDate: 'asc' }, { updatedAt: 'desc' }],
+      take: 5,
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        dueDate: true,
+        project: { select: { id: true, name: true } },
+      },
     }),
     prisma.projectDelivery.count({
       where: {
@@ -85,53 +178,34 @@ async function getProviderData(userId: string) {
         project: { expertProfileId: profile.id, deletedAt: null },
       },
     }),
-    prisma.notification.findMany({
-      where: { userId, isRead: false },
-      orderBy: { createdAt: 'desc' },
-      take: 3,
-    }),
   ]);
+
+  const recentActivity = notifications.map((item) => ({
+    id: item.id,
+    title: item.title,
+    description: item.message,
+    href: item.url,
+    time: formatRelativeTime(item.createdAt),
+    tone:
+      item.type === 'DELIVERY_REVISION_REQUESTED'
+        ? ('amber' as const)
+        : item.type === 'DELIVERY_SUBMITTED'
+        ? ('emerald' as const)
+        : item.type === 'PAYOUT_APPROVED' || item.type === 'PAYOUT_PAID'
+        ? ('indigo' as const)
+        : ('slate' as const),
+  }));
 
   return {
     profile,
-    invitationCount,
-    sentOfferCount,
-    activeProjectCount,
-    pendingPayoutCount,
-    pendingPayoutSum: pendingPayoutSum._sum.amount ?? 0,
-    recentInvitations,
+    invitations,
+    submittedOffers,
     activeProjects,
-    revisionDeliveries,
-    recentNotifications,
+    pendingPayouts,
+    currentTasks,
+    recentActivity,
+    revisionRequests,
   };
-}
-
-function getProjectStatusLabel(status: string): string {
-  const map: Record<string, string> = {
-    KICKOFF_PENDING: 'بانتظار البدء',
-    ACTIVE: 'قيد التنفيذ',
-    PAUSED: 'متوقف',
-    IN_PROGRESS: 'قيد التنفيذ',
-    ON_HOLD: 'معلق',
-    DELIVERED: 'تم التسليم',
-    REVISION_REQUESTED: 'طلب تعديل',
-    COMPLETED: 'مكتمل',
-    CANCELLED: 'ملغي',
-  };
-  return map[status] || status;
-}
-
-function getProjectStatusStyle(status: string): string {
-  const map: Record<string, string> = {
-    KICKOFF_PENDING: 'text-amber-600 bg-amber-50',
-    ACTIVE: 'text-emerald-600 bg-emerald-50',
-    PAUSED: 'text-slate-600 bg-slate-100',
-    IN_PROGRESS: 'text-blue-600 bg-blue-50',
-    ON_HOLD: 'text-orange-600 bg-orange-50',
-    DELIVERED: 'text-emerald-600 bg-emerald-50',
-    REVISION_REQUESTED: 'text-rose-600 bg-rose-50',
-  };
-  return map[status] || 'text-slate-600 bg-slate-100';
 }
 
 export default async function ProviderDashboardPage() {
@@ -140,373 +214,236 @@ export default async function ProviderDashboardPage() {
   if (!session || session.user.globalRole !== 'PROVIDER') {
     redirect('/login');
   }
+
   if (session.user.approvalStatus !== 'APPROVED') {
     redirect('/dashboard/provider/pending');
   }
 
-  const data = await getProviderData(session.user.id);
+  const data = await getExpertWorkspaceData(session.user.id);
   if (!data) {
     redirect('/dashboard/provider/pending');
   }
 
-  const {
-    profile,
-    invitationCount,
-    sentOfferCount,
-    activeProjectCount,
-    pendingPayoutCount,
-    pendingPayoutSum,
-    recentInvitations,
-    activeProjects,
-    revisionDeliveries,
-    recentNotifications,
-  } = data;
-
-  const activeServices = profile.services.filter((s) => s.isActive);
-  const displayServices = activeServices.slice(0, 3);
-
-  const hasUnreadNotifications = recentNotifications.length > 0;
-  const profileCompletion = [
-    profile.specialtyTitle,
-    profile.bio,
-    profile.portfolioUrl,
-    profile.priceRangeMin,
-  ].filter(Boolean).length;
-  const completionPercent = Math.round((profileCompletion / 4) * 100);
+  const activeServices = data.profile.services.map((item) => item.service.nameAr || item.service.name).slice(0, 3);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl md:text-2xl font-display font-bold text-slate-900">
-          لوحة مقدم الخدمة
-        </h1>
-        <p className="text-sm text-slate-500 mt-1">
-          تابع فرصك، عروضك، مشاريعك، وتسليماتك من مكان واحد.
-        </p>
-      </div>
+      <OpsPageHeader
+        eyebrow="Expert Workspace"
+        title="مساحة عمل الخبير"
+        description="أدر الدعوات والعروض والمشاريع والمستحقات من واجهة تنفيذ واحدة واضحة ومباشرة."
+      >
+        <OpsBadge tone="cyan" label={`دعوات تحتاج رد ${data.invitations.length}`} />
+        <OpsBadge tone="amber" label={`طلبات تعديل ${data.revisionRequests}`} />
+        <OpsBadge tone="slate" label={`خدمات مفعلة ${activeServices.length}`} />
+      </OpsPageHeader>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <Link
-          href="/dashboard/provider/opportunities"
-          className="bg-white rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-              <MailOpen size={18} className="text-blue-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-medium text-slate-500 truncate">الفرص المدعو لها</p>
-              <p className="text-lg font-bold font-numeric text-slate-900 tabular-nums">{invitationCount}</p>
-            </div>
-          </div>
-        </Link>
-        <Link
-          href="/dashboard/provider/opportunities"
-          className="bg-white rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
-              <Briefcase size={18} className="text-amber-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-medium text-slate-500 truncate">العروض المرسلة</p>
-              <p className="text-lg font-bold font-numeric text-slate-900 tabular-nums">{sentOfferCount}</p>
-            </div>
-          </div>
-        </Link>
-        <Link
-          href="/dashboard/projects"
-          className="bg-white rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
-              <FolderOpen size={18} className="text-emerald-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-medium text-slate-500 truncate">المشاريع النشطة</p>
-              <p className="text-lg font-bold font-numeric text-slate-900 tabular-nums">{activeProjectCount}</p>
-            </div>
-          </div>
-        </Link>
-        <Link
-          href="/dashboard/provider/payouts"
-          className="bg-white rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-rose-50 flex items-center justify-center shrink-0">
-              <WalletMinimal size={18} className="text-rose-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-medium text-slate-500 truncate">المستحقات بانتظار المراجعة</p>
-              <p className="text-lg font-bold font-numeric text-slate-900 tabular-nums">
-                {pendingPayoutCount > 0 ? formatCurrency(pendingPayoutSum) : '0'}
-              </p>
-            </div>
-          </div>
-        </Link>
-      </div>
-
-      {/* Main Content: 2-column on lg+ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        {/* Left: Operational content (2/3) */}
-        <div className="lg:col-span-2 space-y-4 md:space-y-6">
-          {/* Recent Opportunities */}
-          <div className="bg-white rounded-xl border border-slate-200">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-              <h2 className="text-sm font-display font-bold text-slate-900">أحدث الفرص المدعو لها</h2>
-              <Link
-                href="/dashboard/provider/opportunities"
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
-              >
-                عرض الكل
-                <ChevronLeft size={14} />
-              </Link>
-            </div>
-            <div className="p-5">
-              {recentInvitations.length > 0 ? (
-                <div className="divide-y divide-slate-100">
-                  {recentInvitations.map((inv) => (
-                    <Link
-                      key={inv.id}
-                      href={`/dashboard/provider/opportunities/${inv.order.id}`}
-                      className="flex items-center justify-between py-3 first:pt-0 last:pb-0 hover:bg-slate-50 -mx-2 px-2 rounded-lg transition-colors"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900 truncate">{inv.order.storeName}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{inv.order.serviceType}</p>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div className="space-y-6">
+          <OpsSurface>
+            <OpsSectionHeader
+              title="Invitations"
+              description="الفرص التي بانتظار مراجعتك وتقديم عرضك عليها."
+              action={<Link href="/dashboard/provider/opportunities" className="text-sm font-semibold text-[#06B6D4] hover:text-[#0891B2]">عرض الكل</Link>}
+            />
+            {data.invitations.length === 0 ? (
+              <OpsEmptyState
+                icon={MailOpen}
+                title="لا توجد دعوات حالياً"
+                description="عندما تتم دعوتك إلى فرصة مناسبة لتخصصك، ستظهر هنا مباشرة."
+              />
+            ) : (
+              <div className="space-y-3 p-6">
+                {data.invitations.map((invitation) => (
+                  <Link key={invitation.id} href={`/dashboard/provider/opportunities/${invitation.order.id}`} className="block rounded-[22px] border border-slate-200 p-4 transition-colors hover:bg-slate-50">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{invitation.order.orderNumber}</div>
+                        <div className="mt-2 text-sm font-bold text-[#0B132B]">{invitation.order.storeName}</div>
+                        <div className="mt-1 text-sm text-slate-500">{resolveServiceLabel(invitation.order.serviceType)}</div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[11px] text-slate-400">{formatShortDate(inv.order.createdAt)}</span>
-                        <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center">
-                          <ChevronLeft size={14} className="text-blue-600" />
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <MailOpen size={22} className="text-slate-400" />
-                  </div>
-                  <p className="text-sm text-slate-500">لا توجد فرص مدعو لها حالياً.</p>
-                  <p className="text-xs text-slate-400 mt-1">سيتم إشعارك عند دعوتك لفرصة مناسبة لتخصصك.</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Active Projects */}
-          <div className="bg-white rounded-xl border border-slate-200">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-              <h2 className="text-sm font-display font-bold text-slate-900">مشاريعي النشطة</h2>
-              <Link
-                href="/dashboard/projects"
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
-              >
-                عرض الكل
-                <ChevronLeft size={14} />
-              </Link>
-            </div>
-            <div className="p-5">
-              {activeProjects.length > 0 ? (
-                <div className="divide-y divide-slate-100">
-                  {activeProjects.map((project) => (
-                    <Link
-                      key={project.id}
-                      href={`/dashboard/projects/${project.id}`}
-                      className="flex items-center justify-between py-3 first:pt-0 last:pb-0 hover:bg-slate-50 -mx-2 px-2 rounded-lg transition-colors"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900 truncate">{project.name}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {project.order?.storeName} — {project.order?.serviceType}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${getProjectStatusStyle(project.status)}`}>
-                          {getProjectStatusLabel(project.status)}
-                        </span>
-                        <div className="w-6 h-6 rounded-full bg-slate-50 flex items-center justify-center">
-                          <ChevronLeft size={14} className="text-slate-400" />
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <FolderOpen size={22} className="text-slate-400" />
-                  </div>
-                  <p className="text-sm text-slate-500">لا توجد مشاريع نشطة حالياً.</p>
-                  <p className="text-xs text-slate-400 mt-1">عند قبول عرضك على أحد الطلبات، سيتم إنشاء المشروع هنا.</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Revision Requests */}
-          {revisionDeliveries > 0 && (
-            <Link
-              href="/dashboard/projects"
-              className="block bg-white rounded-xl border border-rose-200 p-4 hover:border-rose-300 transition-all"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-rose-50 flex items-center justify-center shrink-0">
-                  <RefreshCw size={18} className="text-rose-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-900">طلبات تعديل تحتاج إجراء</p>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    لديك {revisionDeliveries} طلب تعديل على تسليماتك بانتظار المراجعة
-                  </p>
-                </div>
-                <span className="text-xs font-bold text-rose-600 whitespace-nowrap">{revisionDeliveries}</span>
+                      <div className="text-xs font-medium text-slate-400">{formatRelativeTime(invitation.invitedAt)}</div>
+                    </div>
+                  </Link>
+                ))}
               </div>
-            </Link>
-          )}
+            )}
+          </OpsSurface>
+
+          <OpsSurface>
+            <OpsSectionHeader
+              title="Offers Submitted"
+              description="العروض المرسلة التي ما زالت في مرحلة القرار أو المراجعة."
+              action={<Link href="/dashboard/provider/opportunities" className="text-sm font-semibold text-[#06B6D4] hover:text-[#0891B2]">إدارة العروض</Link>}
+            />
+            {data.submittedOffers.length === 0 ? (
+              <OpsEmptyState
+                icon={BriefcaseBusiness}
+                title="لا توجد عروض مرسلة حالياً"
+                description="ابدأ من الدعوات المفتوحة لتقديم عروض مناسبة وفتح مشاريع جديدة."
+              />
+            ) : (
+              <div className="space-y-3 p-6">
+                {data.submittedOffers.map((offer) => (
+                  <div key={offer.id} className="rounded-[22px] border border-slate-200 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{offer.order.orderNumber}</div>
+                        <div className="mt-2 text-sm font-bold text-[#0B132B]">{offer.order.storeName}</div>
+                        <div className="mt-1 text-sm text-slate-500">{resolveServiceLabel(offer.order.serviceType)}</div>
+                      </div>
+                      <div className="text-left">
+                        <div className="text-sm font-bold text-[#0B132B]">{formatCurrency(offer.price)}</div>
+                        <div className="mt-1 text-[11px] font-medium text-slate-400">{offer.deliveryDays} يوم</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 text-xs font-medium text-slate-500">آخر تحديث {formatRelativeTime(offer.submittedAt || offer.updatedAt)}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </OpsSurface>
+
+          <OpsSurface>
+            <OpsSectionHeader
+              title="Active Projects"
+              description="المشاريع المفتوحة التي تحتاج تنفيذ أو متابعة أو إعادة تسليم."
+              action={<Link href="/dashboard/projects" className="text-sm font-semibold text-[#06B6D4] hover:text-[#0891B2]">فتح المشاريع</Link>}
+            />
+            {data.activeProjects.length === 0 ? (
+              <OpsEmptyState
+                icon={FolderKanban}
+                title="لا توجد مشاريع نشطة"
+                description="عندما يتم اختيار أحد عروضك، سينتقل العمل هنا كمسار تنفيذ فعلي."
+              />
+            ) : (
+              <div className="space-y-4 p-6">
+                {data.activeProjects.map((project) => {
+                  const health = getProjectHealth({ status: project.status, dueDate: project.dueDate });
+                  const progress = getProjectProgress(project.status);
+
+                  return (
+                    <div key={project.id} className="rounded-[24px] border border-slate-200 p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-bold text-[#0B132B]">{project.name}</div>
+                          <div className="mt-1 text-sm text-slate-500">
+                            {project.order?.storeName || 'بدون متجر مرتبط'} - {resolveServiceLabel(project.order?.serviceType || '')}
+                          </div>
+                        </div>
+                        <OpsHealthBadge health={health} />
+                      </div>
+                      <div className="mt-4">
+                        <OpsProgressBar value={progress} label="Progress %" />
+                      </div>
+                      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                          <div className="text-[11px] font-semibold text-slate-500">Current Phase</div>
+                          <div className="mt-2 text-sm font-semibold text-[#0B132B]">{getProjectStatusLabel(project.status)}</div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                          <div className="text-[11px] font-semibold text-slate-500">Last Update</div>
+                          <div className="mt-2 text-sm font-semibold text-[#0B132B]">{formatRelativeTime(project.updatedAt)}</div>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex justify-end">
+                        <Link href={`/dashboard/projects/${project.id}`} className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-[#0B132B] hover:bg-slate-50">
+                          فتح المشروع
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </OpsSurface>
         </div>
 
-        {/* Right: Profile & Status sidebar (1/3) */}
-        <div className="space-y-4 md:space-y-6">
-          {/* Professional Profile Card */}
-          <div className="bg-white rounded-xl border border-slate-200">
-            <div className="px-5 py-4 border-b border-slate-100">
-              <h2 className="text-sm font-display font-bold text-slate-900">ملفك المهني</h2>
-            </div>
-            <div className="p-5 space-y-4">
-              {/* Specialty */}
-              <div>
-                <p className="text-[11px] font-medium text-slate-500 mb-0.5">التخصص الرئيسي</p>
-                <p className="text-sm font-semibold text-slate-900">
-                  {profile.specialtyTitle || 'لم يتم التعيين'}
-                </p>
-              </div>
-
-              {/* Price range if both defined */}
-              {profile.priceRangeMin != null && profile.priceRangeMax != null && (
-                <div>
-                  <p className="text-[11px] font-medium text-slate-500 mb-0.5">نطاق السعر</p>
-                  <p className="text-sm font-semibold font-numeric text-slate-900 tabular-nums">
-                    {formatCurrency(profile.priceRangeMin)} — {formatCurrency(profile.priceRangeMax)}
-                  </p>
-                </div>
-              )}
-
-              {/* Active services count + chips */}
-              <div>
-                <p className="text-[11px] font-medium text-slate-500 mb-1.5">
-                  الخدمات المفعّلة ({activeServices.length})
-                </p>
-                {displayServices.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {displayServices.map((s) => (
-                      <span
-                        key={s.id}
-                        className="text-[11px] font-medium bg-slate-100 text-slate-700 px-2 py-1 rounded-md"
-                      >
-                        {s.service.nameAr || s.service.name}
-                      </span>
-                    ))}
-                    {activeServices.length > 3 && (
-                      <span className="text-[11px] font-medium text-slate-400 px-1 py-1">
-                        +{activeServices.length - 3}
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-400">لا توجد خدمات مفعّلة</p>
-                )}
-              </div>
-
-              {/* Availability & Completion */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-2 h-2 rounded-full ${
-                      profile.availability === 'available' ? 'bg-emerald-500' : 'bg-slate-300'
-                    }`}
-                  />
-                  <span className="text-xs font-medium text-slate-600">
-                    {profile.availability === 'available' ? 'متاح' : profile.availability || 'غير محدد'}
-                  </span>
-                </div>
-                <span className="text-[11px] text-slate-400">
-                  إكتمال الملف {completionPercent}%
-                </span>
-              </div>
-
-              {/* Completion bar */}
-              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-blue-600 rounded-full transition-all"
-                  style={{ width: `${completionPercent}%` }}
-                />
-              </div>
-
-              {/* CTA */}
-              <Link
-                href="/dashboard/settings"
-                className="block w-full text-center text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg py-2.5 transition-colors"
-              >
-                إدارة الملف المهني
-              </Link>
-            </div>
-          </div>
-
-          {/* Payout Status Card */}
-          <div className="bg-white rounded-xl border border-slate-200">
-            <div className="px-5 py-4 border-b border-slate-100">
-              <h2 className="text-sm font-display font-bold text-slate-900">حالة المستحقات</h2>
-            </div>
-            <div className="p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">بانتظار المراجعة</span>
-                <span className="text-sm font-bold font-numeric text-slate-900 tabular-nums">
-                  {pendingPayoutCount > 0 ? formatCurrency(pendingPayoutSum) : '0'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">عدد المدفوعات</span>
-                <span className="text-sm font-bold font-numeric text-slate-900 tabular-nums">{pendingPayoutCount}</span>
-              </div>
-              <Link
-                href="/dashboard/provider/payouts"
-                className="block w-full text-center text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg py-2.5 transition-colors mt-1"
-              >
-                عرض التفاصيل
-              </Link>
-            </div>
-          </div>
-
-          {/* Recent Notifications */}
-          <div className="bg-white rounded-xl border border-slate-200">
-            <div className="px-5 py-4 border-b border-slate-100">
-              <h2 className="text-sm font-display font-bold text-slate-900">آخر التنبيهات</h2>
-            </div>
-            <div className="p-5">
-              {hasUnreadNotifications ? (
-                <div className="divide-y divide-slate-100">
-                  {recentNotifications.map((n: Notification) => (
-                    <div key={n.id} className="py-2.5 first:pt-0 last:pb-0">
-                      <p className="text-xs font-semibold text-slate-900 truncate">{n.title}</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{n.message}</p>
+        <div className="space-y-6">
+          <OpsSurface>
+            <OpsSectionHeader
+              title="Pending Payouts"
+              description="المستحقات التي تنتظر مراجعة الإدارة قبل اعتماد الصرف."
+              action={<Link href="/dashboard/provider/payouts" className="text-sm font-semibold text-[#06B6D4] hover:text-[#0891B2]">تفاصيل المستحقات</Link>}
+            />
+            {data.pendingPayouts.length === 0 ? (
+              <OpsEmptyState
+                icon={WalletMinimal}
+                title="لا توجد مستحقات معلقة"
+                description="سيظهر هنا فقط ما وصل إلى مرحلة انتظار مراجعة الصرف."
+              />
+            ) : (
+              <div className="space-y-3 p-6">
+                {data.pendingPayouts.map((payout) => (
+                  <div key={payout.id} className="rounded-[22px] border border-slate-200 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-bold text-[#0B132B]">{payout.project.name}</div>
+                        <div className="mt-1 text-sm text-slate-500">{payout.project.order?.storeName || 'بدون متجر مرتبط'}</div>
+                      </div>
+                      <div className="text-left">
+                        <div className="text-sm font-bold text-[#0B132B]">{formatCurrency(payout.amount)}</div>
+                        <div className="mt-1 text-[11px] font-medium text-slate-400">{formatRelativeTime(payout.createdAt)}</div>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <CheckCircle2 size={20} className="text-slate-400" />
                   </div>
-                  <p className="text-xs text-slate-500">لا توجد تنبيهات جديدة</p>
+                ))}
+              </div>
+            )}
+          </OpsSurface>
+
+          <OpsSurface>
+            <OpsSectionHeader title="Recent Activity" description="آخر التحديثات التشغيلية المتعلقة بمشاريعك وعروضك ومراجعاتك." />
+            <OpsTimeline
+              items={data.recentActivity}
+              emptyTitle="لا توجد تحديثات بعد"
+              emptyDescription="ستظهر هنا التحديثات الحقيقية فقط عند حدوثها داخل مسار التنفيذ."
+            />
+          </OpsSurface>
+
+          <OpsSurface>
+            <OpsSectionHeader title="Current Tasks" description="المهام المباشرة المسندة إليك داخل المشاريع الحالية." />
+            {data.currentTasks.length === 0 ? (
+              <OpsEmptyState
+                icon={ListTodo}
+                title="لا توجد مهام مسندة حالياً"
+                description="عندما يبدأ تنظيم العمل على مستوى المهام داخل مشروع ما، ستظهر هنا فقط العناصر المفتوحة."
+              />
+            ) : (
+              <div className="space-y-3 p-6">
+                {data.currentTasks.map((task) => (
+                  <Link key={task.id} href={`/dashboard/projects/${task.project.id}`} className="block rounded-[22px] border border-slate-200 p-4 transition-colors hover:bg-slate-50">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-bold text-[#0B132B]">{task.title}</div>
+                        <div className="mt-1 text-sm text-slate-500">{task.project.name}</div>
+                      </div>
+                      <div className="text-left">
+                        <div className="text-xs font-semibold text-slate-500">{getTaskStatusLabel(task.status)}</div>
+                        <div className="mt-1 text-[11px] font-medium text-slate-400">
+                          {task.dueDate ? formatRelativeTime(task.dueDate) : 'بدون موعد'}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </OpsSurface>
+
+          <OpsSurface>
+            <OpsSectionHeader title="Current Services" description="الخدمات المفعلة حالياً في ملفك المهني داخل بروز." />
+            <div className="flex flex-wrap gap-2 p-6">
+              {activeServices.length > 0 ? (
+                activeServices.map((service) => <OpsBadge key={service} tone="slate" label={service} />)
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <CheckCircle2 size={16} className="text-slate-300" />
+                  لا توجد خدمات مفعلة حالياً.
                 </div>
               )}
             </div>
-          </div>
+          </OpsSurface>
         </div>
       </div>
     </div>
