@@ -33,10 +33,9 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       return NextResponse.json({ error: 'لم يتم العثور على الحساب' }, { status: 404 });
     }
 
+    // Providers don't belong to an organization (orgs are merchant-only),
+    // so orgId may be absent — in that case we simply skip the in-app notification.
     const orgId = expertProfile.user.orgMembers[0]?.orgId;
-    if (!orgId) {
-      return NextResponse.json({ error: 'لم يتم العثور على المؤسسة المرتبطة بالحساب' }, { status: 400 });
-    }
 
     const updatedProfile = await prisma.$transaction(async (tx) => {
       const profile = await tx.expertProfile.update({
@@ -48,16 +47,18 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
         },
       });
 
-      await createNotification(tx, {
-        orgId,
-        userId: expertProfile.userId,
-        type: 'GENERAL',
-        title: 'تم قبول طلب الانضمام',
-        message: 'تم قبول طلب انضمامك كمقدم خدمة في بروز. يمكنك الآن الدخول إلى لوحة التحكم والاطلاع على الفرص المتاحة.',
-        entityType: 'expert',
-        entityId: expertId,
-        url: '/dashboard/provider',
-      });
+      if (orgId) {
+        await createNotification(tx, {
+          orgId,
+          userId: expertProfile.userId,
+          type: 'GENERAL',
+          title: 'تم قبول طلب الانضمام',
+          message: 'تم قبول طلب انضمامك كمقدم خدمة في بروز. يمكنك الآن الدخول إلى لوحة التحكم والاطلاع على الفرص المتاحة.',
+          entityType: 'expert',
+          entityId: expertId,
+          url: '/dashboard/provider',
+        });
+      }
 
       return profile;
     });
