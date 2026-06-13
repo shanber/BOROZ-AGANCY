@@ -184,7 +184,9 @@ export default function LoginPage() {
 
             {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-400">نسيت كلمة المرور؟ تواصل مع الدعم</span>
+              <Link href="/forgot-password" className="text-sm text-[#6D5DFB] hover:underline">
+                نسيت كلمة المرور؟
+              </Link>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" className="w-4 h-4 rounded border-slate-300" />
                 <span className="text-sm text-slate-600">تذكرني</span>
