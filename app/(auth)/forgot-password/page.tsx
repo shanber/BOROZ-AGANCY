@@ -2,12 +2,17 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Mail, Lock, CheckCircle, ArrowRight } from 'lucide-react';
+import { BrandLogo } from '@/app/components/ui/BrandLogo';
 import PhoneInput from '@/app/components/ui/PhoneInput';
 import { getCountryByCode, normalizePhoneNumber } from '@/app/lib/phone';
+import { useLocale } from '@/app/components/i18n/LocaleProvider';
+import LanguageToggle from '@/app/components/i18n/LanguageToggle';
 
 export default function ForgotPasswordPage() {
+  const { t: dict } = useLocale();
+  const t = dict.auth.forgot;
+
   const [email, setEmail] = useState('');
   const [countryCode, setCountryCode] = useState('SA');
   const [localPhone, setLocalPhone] = useState('');
@@ -23,24 +28,24 @@ export default function ForgotPasswordPage() {
     setSuccess('');
 
     if (!email.trim()) {
-      setError('يرجى إدخال البريد الإلكتروني');
+      setError(t.errors.emailRequired);
       return;
     }
 
     const dialCode = getCountryByCode(countryCode).dialCode;
     const normalizedPhone = normalizePhoneNumber(dialCode, localPhone);
     if (!normalizedPhone) {
-      setError('رقم الجوال غير صحيح');
+      setError(t.errors.phoneInvalid);
       return;
     }
 
     if (!newPassword) {
-      setError('يرجى إدخال كلمة المرور الجديدة');
+      setError(t.errors.newPasswordRequired);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError('كلمتا المرور غير متطابقتين');
+      setError(t.errors.passwordMismatch);
       return;
     }
 
@@ -59,16 +64,16 @@ export default function ForgotPasswordPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'حدث خطأ أثناء استعادة كلمة المرور');
+        throw new Error(data.error || t.errors.generic);
       }
 
-      setSuccess(data.message || 'تم تحديث كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول.');
+      setSuccess(data.message || t.success);
       setEmail('');
       setLocalPhone('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
-      setError(err.message || 'حدث خطأ أثناء استعادة كلمة المرور');
+      setError(err.message || t.errors.generic);
     } finally {
       setIsLoading(false);
     }
@@ -76,24 +81,25 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
+      <div className="absolute top-4 inset-inline-end-4 z-10">
+        <LanguageToggle variant="compact" />
+      </div>
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <Image src="/شعار%20بروز.svg" alt="بروز" width={100} height={40} className="h-10 w-auto object-contain" />
+            <BrandLogo width={100} height={40} className="h-10 w-auto object-contain" />
           </div>
-          <p className="text-slate-500 text-sm">استعادة كلمة المرور عبر البريد والجوال المسجلين</p>
+          <p className="text-slate-500 text-sm">{t.tagline}</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-8">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 mb-2 text-right">استعادة كلمة المرور</h1>
-              <p className="text-slate-500 text-right text-sm">
-                أدخل البريد الإلكتروني ورقم الجوال المسجلين ثم عيّن كلمة مرور جديدة.
-              </p>
+              <h1 className="text-2xl font-bold text-slate-900 mb-2 text-start">{t.title}</h1>
+              <p className="text-slate-500 text-start text-sm">{t.subtitle}</p>
             </div>
             <Link href="/login" className="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors text-slate-600">
-              <ArrowRight size={20} />
+              <ArrowRight size={20} className="rtl:rotate-180" />
             </Link>
           </div>
 
@@ -112,22 +118,22 @@ export default function ForgotPasswordPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-900 mb-2 text-right">البريد الإلكتروني</label>
+              <label className="block text-sm font-medium text-slate-900 mb-2 text-start">{t.emailLabel}</label>
               <div className="relative">
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="example@domain.com"
-                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-400"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-start text-slate-900 placeholder-slate-400"
                   required
                 />
-                <Mail size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Mail size={18} className="absolute inset-inline-end-3 top-1/2 -translate-y-1/2 text-slate-400" />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-900 mb-2 text-right">رقم الجوال المسجل</label>
+              <label className="block text-sm font-medium text-slate-900 mb-2 text-start">{t.phoneLabel}</label>
               <PhoneInput
                 countryCode={countryCode}
                 onCountryChange={setCountryCode}
@@ -139,32 +145,32 @@ export default function ForgotPasswordPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-900 mb-2 text-right">كلمة المرور الجديدة</label>
+              <label className="block text-sm font-medium text-slate-900 mb-2 text-start">{t.newPasswordLabel}</label>
               <div className="relative">
                 <input
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-400"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-start text-slate-900 placeholder-slate-400"
                   required
                 />
-                <Lock size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Lock size={18} className="absolute inset-inline-end-3 top-1/2 -translate-y-1/2 text-slate-400" />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-900 mb-2 text-right">تأكيد كلمة المرور الجديدة</label>
+              <label className="block text-sm font-medium text-slate-900 mb-2 text-start">{t.confirmPasswordLabel}</label>
               <div className="relative">
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-400"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-start text-slate-900 placeholder-slate-400"
                   required
                 />
-                <Lock size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Lock size={18} className="absolute inset-inline-end-3 top-1/2 -translate-y-1/2 text-slate-400" />
               </div>
             </div>
 
@@ -173,14 +179,14 @@ export default function ForgotPasswordPage() {
               disabled={isLoading}
               className="w-full bg-[#6D5DFB] hover:bg-[#4F46E5] disabled:bg-slate-400 text-white font-semibold py-2.5 rounded-2xl transition-colors"
             >
-              {isLoading ? 'جاري التحقق...' : 'تحديث كلمة المرور'}
+              {isLoading ? t.submitting : t.submit}
             </button>
           </form>
 
           <p className="text-center text-slate-500 text-sm mt-6">
-            تذكرت كلمة المرور؟{' '}
+            {t.rememberPassword}{' '}
             <Link href="/login" className="text-[#6D5DFB] font-semibold hover:underline">
-              العودة لتسجيل الدخول
+              {t.backToLogin}
             </Link>
           </p>
         </div>

@@ -3,13 +3,19 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Mail, Lock, Store, CheckCircle, ArrowRight } from 'lucide-react';
+import { BrandLogo } from '@/app/components/ui/BrandLogo';
 import PhoneInput from '@/app/components/ui/PhoneInput';
 import { getCountryByCode, normalizePhoneNumber } from '@/app/lib/phone';
+import { useLocale } from '@/app/components/i18n/LocaleProvider';
+import LanguageToggle from '@/app/components/i18n/LanguageToggle';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t: dict } = useLocale();
+  const t = dict.auth.merchantRegister;
+  const tAuth = dict.auth;
+
   const [formData, setFormData] = useState({
     name: '',
     storeName: '',
@@ -36,24 +42,24 @@ export default function RegisterPage() {
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
-      setError('كلمات المرور غير متطابقة');
+      setError(t.errors.passwordMismatch);
       return;
     }
 
     if (formData.email.length < 5) {
-      setError('البريد الإلكتروني غير صحيح');
+      setError(t.errors.emailInvalid);
       return;
     }
 
     const dialCode = getCountryByCode(countryCode).dialCode;
     const normalizedPhone = normalizePhoneNumber(dialCode, localPhone);
     if (!normalizedPhone) {
-      setError('رقم الجوال غير صحيح');
+      setError(t.errors.phoneInvalid);
       return;
     }
 
     if (formData.password.length < 8) {
-      setError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+      setError(t.errors.passwordShort);
       return;
     }
 
@@ -76,11 +82,11 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'حدث خطأ غير متوقع');
+        throw new Error(data.error || t.errors.generic);
       }
 
-      setSuccess('تم إنشاء الحساب بنجاح! جاري التوجيه...');
-      
+      setSuccess(t.success);
+
       // Redirect after short delay to login
       setTimeout(() => {
         router.push('/login?registered=true');
@@ -96,17 +102,21 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
       {/* Background decorative elements */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-[#6D5DFB] opacity-[0.06] rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#6D5DFB] opacity-[0.05] rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 inset-inline-start-0 w-96 h-96 bg-[#6D5DFB] opacity-[0.06] rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 inset-inline-end-0 w-96 h-96 bg-[#6D5DFB] opacity-[0.05] rounded-full blur-3xl pointer-events-none" />
+
+      <div className="absolute top-4 inset-inline-end-4 z-20">
+        <LanguageToggle variant="compact" />
+      </div>
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <Image src="/شعار%20بروز.svg" alt="بروز" width={100} height={40} className="h-10 w-auto object-contain" />
+            <BrandLogo width={100} height={40} className="h-10 w-auto object-contain" />
           </div>
-          <p className="text-slate-500 text-sm">منصة خدمات وخبراء متاجر سلة</p>
+          <p className="text-slate-500 text-sm">{tAuth.tagline}</p>
         </div>
 
         {/* Form Container */}
@@ -114,15 +124,15 @@ export default function RegisterPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 mb-2 text-right">
-                تسجيل متجر سلة
+              <h1 className="text-2xl font-bold text-slate-900 mb-2 text-start">
+                {t.title}
               </h1>
-              <p className="text-slate-500 text-right text-sm">
-                ابدأ رحلتك مع منصة BOROZ اليوم
+              <p className="text-slate-500 text-start text-sm">
+                {t.subtitle}
               </p>
             </div>
             <Link href="/register" className="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-slate-600">
-              <ArrowRight size={20} />
+              <ArrowRight size={20} className="rtl:rotate-180" />
             </Link>
           </div>
 
@@ -145,83 +155,83 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
-                الاسم الكامل
+              <label className="block text-sm font-medium text-slate-700 mb-2 text-start">
+                {t.nameLabel}
               </label>
               <div className="relative">
                 <input
                   type="text"
                   name="name"
-                  placeholder="اسمك الكامل"
+                  placeholder={t.namePlaceholder}
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-start text-slate-900 placeholder-slate-500"
                   required
                 />
-                <Store size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                <Store size={18} className="absolute inset-inline-end-3 top-1/2 -translate-y-1/2 text-slate-500" />
               </div>
             </div>
             {/* Store Name */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
-                اسم المتجر
+              <label className="block text-sm font-medium text-slate-700 mb-2 text-start">
+                {t.storeNameLabel}
               </label>
               <div className="relative">
                 <input
                   type="text"
                   name="storeName"
-                  placeholder="اسم متجرك على سلة"
+                  placeholder={t.storeNamePlaceholder}
                   value={formData.storeName}
                   onChange={handleChange}
-                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-start text-slate-900 placeholder-slate-500"
                   required
                 />
-                <Store size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                <Store size={18} className="absolute inset-inline-end-3 top-1/2 -translate-y-1/2 text-slate-500" />
               </div>
             </div>
 
             {/* Store URL */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
-                رابط المتجر
+              <label className="block text-sm font-medium text-slate-700 mb-2 text-start">
+                {t.storeUrlLabel}
               </label>
               <div className="relative">
                 <input
                   type="url"
                   name="storeUrl"
-                  placeholder="https://salla.sa/yourstore"
+                  placeholder={t.storeUrlPlaceholder}
                   value={formData.storeUrl}
                   onChange={handleChange}
-                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-start text-slate-900 placeholder-slate-500"
                   required
                 />
-                <Store size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                <Store size={18} className="absolute inset-inline-end-3 top-1/2 -translate-y-1/2 text-slate-500" />
               </div>
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
-                البريد الإلكتروني
+              <label className="block text-sm font-medium text-slate-700 mb-2 text-start">
+                {t.emailLabel}
               </label>
               <div className="relative">
                 <input
                   type="email"
                   name="email"
-                  placeholder="example@domain.com"
+                  placeholder={t.emailPlaceholder}
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-start text-slate-900 placeholder-slate-500"
                   required
                 />
-                <Mail size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                <Mail size={18} className="absolute inset-inline-end-3 top-1/2 -translate-y-1/2 text-slate-500" />
               </div>
             </div>
 
             {/* Phone */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
-                رقم الجوال
+              <label className="block text-sm font-medium text-slate-700 mb-2 text-start">
+                {t.phoneLabel}
               </label>
               <PhoneInput
                 countryCode={countryCode}
@@ -235,8 +245,8 @@ export default function RegisterPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
-                كلمة المرور
+              <label className="block text-sm font-medium text-slate-700 mb-2 text-start">
+                {t.passwordLabel}
               </label>
               <div className="relative">
                 <input
@@ -245,17 +255,17 @@ export default function RegisterPage() {
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-start text-slate-900 placeholder-slate-500"
                   required
                 />
-                <Lock size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                <Lock size={18} className="absolute inset-inline-end-3 top-1/2 -translate-y-1/2 text-slate-500" />
               </div>
             </div>
 
             {/* Confirm Password */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
-                تأكيد كلمة المرور
+              <label className="block text-sm font-medium text-slate-700 mb-2 text-start">
+                {t.confirmPasswordLabel}
               </label>
               <div className="relative">
                 <input
@@ -264,24 +274,24 @@ export default function RegisterPage() {
                   placeholder="••••••••"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-right text-slate-900 placeholder-slate-500"
+                  className="w-full has-icon bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6D5DFB] focus:border-[#6D5DFB] text-start text-slate-900 placeholder-slate-500"
                   required
                 />
-                <Lock size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                <Lock size={18} className="absolute inset-inline-end-3 top-1/2 -translate-y-1/2 text-slate-500" />
               </div>
             </div>
 
             {/* Terms Agreement */}
             <label className="flex items-start gap-2 cursor-pointer">
               <input type="checkbox" className="w-4 h-4 rounded border-slate-300 mt-1" required />
-              <span className="text-sm text-slate-500 text-right flex-1">
-                أوافق على{' '}
+              <span className="text-sm text-slate-500 text-start flex-1">
+                {t.agreeBefore}{' '}
                 <Link href="/terms" className="text-[#6D5DFB] hover:underline">
-                  شروط الخدمة
+                  {t.agreeTerms}
                 </Link>{' '}
-                و
+                {t.agreeAnd}{' '}
                 <Link href="/privacy" className="text-[#6D5DFB] hover:underline">
-                  سياسة الخصوصية
+                  {t.agreePrivacy}
                 </Link>
               </span>
             </label>
@@ -292,21 +302,21 @@ export default function RegisterPage() {
               disabled={isLoading}
               className="w-full bg-[#6D5DFB] hover:bg-[#4F46E5] disabled:bg-slate-400 text-white font-semibold py-2.5 rounded-xl transition-colors"
             >
-              {isLoading ? 'جاري الإنشاء...' : 'إنشاء الحساب'}
+              {isLoading ? t.submitting : t.submit}
             </button>
           </form>
 
           {/* Footer Link */}
           <p className="text-center text-slate-500 text-sm mt-6">
-            لديك حساب بالفعل؟{' '}
+            {t.haveAccount}{' '}
             <Link href="/login" className="text-[#6D5DFB] font-semibold hover:underline">
-              تسجيل الدخول
+              {t.loginLink}
             </Link>
           </p>
         </div>
 
         <p className="text-center text-slate-500 text-xs mt-6">
-          © 2024 BOROZ | بروز. جميع الحقوق محفوظة.
+          {tAuth.copyright}
         </p>
       </div>
     </div>

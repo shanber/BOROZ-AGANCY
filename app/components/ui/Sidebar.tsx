@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
+import { useLocale } from '@/app/components/i18n/LocaleProvider';
+import { BrandLogo } from '@/app/components/ui/BrandLogo';
 import {
   LayoutDashboard,
   Settings,
@@ -17,32 +18,6 @@ import {
   WalletMinimal,
 } from 'lucide-react';
 
-const merchantNavItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
-  { href: '/dashboard/orders', icon: ShoppingCart, label: 'طلباتي' },
-  { href: '/dashboard/offers', icon: Briefcase, label: 'العروض' },
-  { href: '/dashboard/projects', icon: FolderOpen, label: 'المشاريع' },
-  { href: '/dashboard/settings', icon: Settings, label: 'الإعدادات' },
-];
-
-const adminNavItems = [
-  { href: '/dashboard/admin', icon: LayoutDashboard, label: 'لوحة التحكم' },
-  { href: '/dashboard/admin/requests', icon: ClipboardCheck, label: 'مراجعة الطلبات' },
-  { href: '/dashboard/admin/providers', icon: Users, label: 'مقدمي الخدمات' },
-  { href: '/dashboard/admin/payouts', icon: WalletMinimal, label: 'إدارة الصرف' },
-  { href: '/dashboard/admin/settings', icon: Settings, label: 'إعدادات المنصة' },
-  { href: '/dashboard/projects', icon: FolderOpen, label: 'المشاريع' },
-  { href: '/dashboard/settings', icon: Settings, label: 'إعدادات الحساب' },
-];
-
-const providerNavItems = [
-  { href: '/dashboard/provider', icon: LayoutDashboard, label: 'لوحة التحكم' },
-  { href: '/dashboard/provider/opportunities', icon: Briefcase, label: 'الفرص المتاحة' },
-  { href: '/dashboard/projects', icon: FolderOpen, label: 'المشاريع' },
-  { href: '/dashboard/provider/payouts', icon: WalletMinimal, label: 'المستحقات' },
-  { href: '/dashboard/settings', icon: Settings, label: 'الإعدادات' },
-];
-
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -51,14 +26,46 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname() ?? '';
   const { data: session } = useSession();
+  const { locale, t: dict } = useLocale();
   const globalRole = session?.user?.globalRole;
 
-  let currentNavItems = merchantNavItems;
-  if (globalRole === 'ADMIN') {
-    currentNavItems = adminNavItems;
-  } else if (globalRole === 'PROVIDER') {
-    currentNavItems = providerNavItems;
-  }
+  const d = dict.sidebar;
+
+  const buildNavItems = (role: string | undefined | null) => {
+    if (role === 'ADMIN') {
+      return [
+        { href: '/dashboard/admin', icon: LayoutDashboard, label: d.dashboard },
+        { href: '/dashboard/admin/requests', icon: ClipboardCheck, label: d.requests },
+        { href: '/dashboard/admin/providers', icon: Users, label: d.providers },
+        { href: '/dashboard/admin/payouts', icon: WalletMinimal, label: d.payouts },
+        { href: '/dashboard/admin/settings', icon: Settings, label: d.platformSettings },
+        { href: '/dashboard/projects', icon: FolderOpen, label: d.projects },
+        { href: '/dashboard/settings', icon: Settings, label: d.settings },
+      ];
+    }
+    if (role === 'PROVIDER') {
+      return [
+        { href: '/dashboard/provider', icon: LayoutDashboard, label: d.dashboard },
+        { href: '/dashboard/provider/opportunities', icon: Briefcase, label: d.opportunities },
+        { href: '/dashboard/projects', icon: FolderOpen, label: d.projects },
+        { href: '/dashboard/provider/payouts', icon: WalletMinimal, label: d.providerPayouts },
+        { href: '/dashboard/settings', icon: Settings, label: d.settings },
+      ];
+    }
+    return [
+      { href: '/dashboard', icon: LayoutDashboard, label: d.dashboard },
+      { href: '/dashboard/orders', icon: ShoppingCart, label: d.orders },
+      { href: '/dashboard/offers', icon: Briefcase, label: d.offers },
+      { href: '/dashboard/projects', icon: FolderOpen, label: d.projects },
+      { href: '/dashboard/settings', icon: Settings, label: d.settings },
+    ];
+  };
+
+  const currentNavItems = buildNavItems(globalRole);
+
+  const roleSuffix = globalRole === 'ADMIN' ? locale === 'ar' ? 'لوحة تحكم الإدارة' : 'Admin Panel'
+    : globalRole === 'PROVIDER' ? locale === 'ar' ? 'لوحة تحكم مقدم الخدمة' : 'Provider Panel'
+    : locale === 'ar' ? 'لوحة تحكم التاجر' : 'Merchant Panel';
 
   const isActive = (href: string) => {
     const exactOnly = ['/dashboard', '/dashboard/admin', '/dashboard/provider'];
@@ -80,19 +87,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           onClick={onClose}
           className="flex flex-col items-center text-center gap-1"
         >
-          <Image src="/شعار%20بروز.svg" alt="بروز" width={90} height={32} className="h-8 w-auto object-contain" />
+          <BrandLogo width={90} height={32} className="h-8 w-auto object-contain" />
           <span className="mt-0.5 w-full text-center text-[10px] font-semibold tracking-wide text-slate-400 dark:text-slate-400">
-            {globalRole === 'ADMIN'
-              ? 'لوحة تحكم الإدارة'
-              : globalRole === 'PROVIDER'
-              ? 'لوحة تحكم مقدم الخدمة'
-              : 'لوحة تحكم التاجر'}
+            {roleSuffix}
           </span>
         </Link>
         <button
           onClick={onClose}
           className="absolute left-5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg md:hidden"
-          aria-label="إغلاق القائمة"
+          aria-label={locale === 'ar' ? 'إغلاق القائمة' : 'Close menu'}
         >
           <X size={20} />
         </button>
@@ -130,7 +133,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-white hover:bg-red-600 rounded-lg transition-colors"
         >
           <LogOut size={18} />
-          <span className="font-display">تسجيل الخروج</span>
+          <span className="font-display">{dict.nav.logout}</span>
         </button>
       </div>
     </aside>

@@ -41,8 +41,9 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --shadow-none: none;
 
-  /* Fonts */
---font-ar: 'Tajawal', 'system-ui', sans-serif;  --font-num: 'Inter', 'system-ui', sans-serif;
+  /* Fonts — Inter handles Latin/digits, Tajawal handles Arabic (per-glyph fallback) */
+  --font-ar: 'Inter', 'Tajawal', 'system-ui', sans-serif;
+  --font-num: 'Inter', 'system-ui', sans-serif;
 }
 
 /* ─────────────────────────────────────────────────────────────
