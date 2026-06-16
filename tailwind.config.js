@@ -49,8 +49,8 @@ const config = {
         glass: 'var(--border-glass)',
       },
       fontFamily: {
-        sans: ['IBM Plex Sans Arabic', 'system-ui', 'sans-serif'],
-        display: ['IBM Plex Sans Arabic', 'sans-serif'],
+        sans: ['var(--font-arabic)', 'var(--font-latin)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-arabic)', 'var(--font-latin)', 'sans-serif'],
         mono: ['Fira Code', 'monospace'],
       },
       boxShadow: {
