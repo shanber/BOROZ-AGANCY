@@ -1,9 +1,22 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter, Noto_Sans_Arabic } from 'next/font/google';
 import './globals.css';
 import AuthProvider from '@/app/components/providers/AuthProvider';
 import { LocaleProvider } from '@/app/components/i18n/LocaleProvider';
 import { getLocaleFromCookie } from '@/app/lib/locale-server';
 import { getDir } from '@/app/lib/i18n';
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-latin-face',
+  display: 'swap',
+});
+
+const notoSansArabic = Noto_Sans_Arabic({
+  subsets: ['arabic'],
+  variable: '--font-arabic-face',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'BOROZ | بروز — منصة خبراء متاجر سلة',
@@ -30,18 +43,12 @@ export default function RootLayout({
   const dir = getDir(locale);
 
   return (
-    <html lang={locale} dir={dir} suppressHydrationWarning>
+    <html lang={locale} dir={dir} suppressHydrationWarning className={`${inter.variable} ${notoSansArabic.variable}`}>
       <head>
         <meta name="theme-color" content="#FFFFFF" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body>
         <LocaleProvider locale={locale}>
