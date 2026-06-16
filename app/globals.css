@@ -42,7 +42,7 @@
   --shadow-none: none;
 
   /* Fonts */
-  --font-arabic: var(--font-arabic-face), 'Noto Sans Arabic', sans-serif;
+  --font-arabic: var(--font-arabic-face), 'Alexandria', sans-serif;
   --font-latin: var(--font-latin-face), 'Inter', system-ui, sans-serif;
 }
 

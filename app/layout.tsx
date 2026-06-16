@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Noto_Sans_Arabic } from 'next/font/google';
+import { Alexandria, Inter } from 'next/font/google';
 import './globals.css';
 import AuthProvider from '@/app/components/providers/AuthProvider';
 import { LocaleProvider } from '@/app/components/i18n/LocaleProvider';
@@ -12,7 +12,7 @@ const inter = Inter({
   display: 'swap',
 });
 
-const notoSansArabic = Noto_Sans_Arabic({
+const alexandria = Alexandria({
   subsets: ['arabic'],
   variable: '--font-arabic-face',
   display: 'swap',
@@ -43,7 +43,7 @@ export default function RootLayout({
   const dir = getDir(locale);
 
   return (
-    <html lang={locale} dir={dir} suppressHydrationWarning className={`${inter.variable} ${notoSansArabic.variable}`}>
+    <html lang={locale} dir={dir} suppressHydrationWarning className={`${inter.variable} ${alexandria.variable}`}>
       <head>
         <meta name="theme-color" content="#FFFFFF" />
         <meta name="mobile-web-app-capable" content="yes" />
